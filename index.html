@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milky Way Park</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Noto+Sans+KR:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #030308;
+            --card-bg: #1e1e1e;
+            --card-border: #2d2d2d;
+            --text-color: #ffffff;
+            --sub-text: #aaaaaa;
+            --nav-bg: #1e1e1e;
+            --accent-color: #4CAF50;
+            --nav-active-color: #4CAF50;
+        }
+
+        body.theme-light { --bg-color: #f5f5f7; --card-bg: #ffffff; --card-border: #e0e0e0; --text-color: #1d1d1f; --sub-text: #6e6e73; --nav-bg: #ffffff; --accent-color: #2e7d32; --nav-active-color: #2e7d32; }
+        body.theme-aurora { --bg-color: linear-gradient(135deg, #050b14 0%, #0a2540 50%, #004d40 100%); --card-bg: rgba(10, 25, 47, 0.75); --card-border: #00897b; --text-color: #e0f2f1; --sub-text: #80cbd2; --nav-bg: #050b14; --accent-color: #26a69a; --nav-active-color: #26a69a; }
+        body.theme-sunset { --bg-color: linear-gradient(180deg, #ff5e36 0%, #ff7676 35%, #b152bb 70%, #2c1a4d 100%); --card-bg: rgba(255, 255, 255, 0.18); --card-border: rgba(255, 255, 255, 0.3); --text-color: #ffffff; --sub-text: #ffd3e0; --nav-bg: #1c1033; --accent-color: #ffaa42; --nav-active-color: #ffaa42; }
+        body.theme-neon { --bg-color: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); --card-bg: rgba(30, 27, 75, 0.65); --card-border: #ff007f; --text-color: #ffffff; --sub-text: #ff80bf; --nav-bg: #120f24; --accent-color: #ff007f; --nav-active-color: #ff007f; }
+        body.theme-lavender { --bg-color: linear-gradient(135deg, #2e2157 0%, #4b3d8f 50%, #7661c6 100%); --card-bg: rgba(75, 61, 143, 0.45); --card-border: #bcaaa4; --text-color: #f3e8ff; --sub-text: #d8b4fe; --nav-bg: #271d47; --accent-color: #c084fc; --nav-active-color: #c084fc; }
+        body.theme-deepspace { 
+            --bg-color: transparent; 
+            --card-bg: rgba(15, 23, 42, 0.65); 
+            --card-border: rgba(147, 197, 253, 0.3); 
+            --text-color: #f8fafc; 
+            --sub-text: #93c5fd; 
+            --nav-bg: #0b0f19; 
+            --accent-color: #60a5fa; 
+            --nav-active-color: #60a5fa;
+        }
+        body.theme-snow { 
+            --bg-color: transparent; 
+            --card-bg: rgba(30, 41, 59, 0.8); 
+            --card-border: rgba(226, 232, 240, 0.3); 
+            --text-color: #f8fafc; 
+            --sub-text: #cbd5e1; 
+            --nav-bg: #0b1120; 
+            --accent-color: #38bdf8; 
+            --nav-active-color: #38bdf8;
+        }
+        body.theme-autumn {
+            --bg-color: transparent;
+            --card-bg: rgba(43, 24, 16, 0.75);
+            --card-border: rgba(217, 119, 6, 0.4);
+            --text-color: #fef3c7;
+            --sub-text: #fde68a;
+            --nav-bg: #1c0d02;
+            --accent-color: #f59e0b;
+            --nav-active-color: #f59e0b;
+        }
+        body.theme-summer {
+            --bg-color: transparent;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(255, 255, 255, 0.9);
+            --text-color: #1e293b;
+            --sub-text: #64748b;
+            --nav-bg: #ffffff;
+            --accent-color: #0284c7;
+            --nav-active-color: #0284c7;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: #030308;
+            overflow: hidden;
+            font-family: 'Noto Sans KR', sans-serif;
+            color: #ffffff;
+        }
+
+        #space-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .intro-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .sub-title { font-size: 0.9rem; font-weight: 300; color: #cbd5e1; margin-bottom: 6px; letter-spacing: 3px; }
+        .kor-title { font-size: 1.3rem; font-weight: 500; color: #93c5fd; margin-bottom: 14px; letter-spacing: 4px; }
+        .main-eng-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: 5px;
+            margin-bottom: 35px;
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 45%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .start-btn {
+            position: relative;
+            z-index: 10;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.8) 0%, rgba(168, 85, 247, 0.8) 50%, rgba(236, 72, 153, 0.8) 100%);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 16px 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+            transition: all 0.4s ease;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-4px) scale(1.03);
+            background: linear-gradient(135deg, rgba(129, 140, 248, 0.95) 0%, rgba(192, 132, 252, 0.95) 50%, rgba(244, 114, 182, 0.95) 100%);
+        }
+
+        .fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        #main-app {
+            position: relative;
+            z-index: 3;
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            background: var(--bg-color);
+            background-attachment: fixed;
+            color: var(--text-color);
+            padding-top: 55px;
+            padding-bottom: 80px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .top-navbar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: var(--nav-bg); border-bottom: 1px solid var(--card-border); display: flex; justify-content: flex-end; align-items: center; padding: 0 15px; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .top-navbar .money-badge { background: rgba(0, 0, 0, 0.3); color: #ffca28; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 1px solid rgba(255, 202, 40, 0.3); display: flex; align-items: center; gap: 6px; }
+
+        #content { padding: 15px; }
+        .card { background: var(--card-bg); border-radius: 14px; padding: 18px; margin-bottom: 12px; border: 1px solid var(--card-border); box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; position: relative; backdrop-filter: blur(10px); }
+        .profile-card { padding: 0 !important; }
+        .banner-container { width: 100%; height: 110px; background: linear-gradient(135deg, #2e7d32, #1b5e20); position: relative; background-size: cover; background-position: center; }
+        .edit-banner-btn { position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.6); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .profile-body { padding: 15px 18px 18px 18px; text-align: left; }
+        .avatar-wrapper { position: relative; width: 70px; height: 70px; margin-top: -45px; margin-bottom: 10px; }
+        .avatar { width: 100%; height: 100%; border-radius: 50%; background: #262626; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #fff; border: 3px solid var(--card-bg); overflow: hidden; object-fit: cover; }
+        .edit-avatar-btn { position: absolute; bottom: 0; right: -2px; background: var(--accent-color); border: 2px solid var(--card-bg); color: white; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+        .user-info-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+        .user-info h2 { margin: 0; font-size: 20px; }
+        .edit-name-btn { background: none; border: none; color: var(--sub-text); cursor: pointer; font-size: 14px; padding: 2px; }
+        .badge { background: rgba(0,0,0,0.15); color: #ffca28; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; border: 1px solid rgba(255, 202, 40, 0.3); display: inline-block; }
+
+        .about-me-box { margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--card-border); }
+        .about-me-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .about-me-title { font-size: 11px; font-weight: bold; color: var(--sub-text); text-transform: uppercase; letter-spacing: 0.5px; }
+        .about-me-content { font-size: 13px; line-height: 1.5; color: var(--text-color); white-space: pre-wrap; word-break: break-word; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .stat-item { background: rgba(0,0,0,0.1); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid var(--card-border); }
+        .stat-title { font-size: 12px; color: var(--sub-text); margin-bottom: 4px; }
+        .stat-value { font-size: 16px; font-weight: bold; color: var(--accent-color); }
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .add-dday-btn { background: var(--accent-color); border: none; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .dday-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        
+        .dday-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(0,0,0,0.1); border-radius: 8px; border: 1px solid var(--card-border); }
+        .dday-info { display: flex; align-items: center; gap: 10px; }
+        .dday-title { font-size: 14px; font-weight: 500; }
+        .dday-tag { font-size: 14px; font-weight: bold; color: var(--accent-color); }
+        .dday-actions { display: flex; gap: 6px; align-items: center; }
+        .dday-btn { background: none; border: none; color: var(--sub-text); cursor: pointer; font-size: 13px; padding: 4px; }
+        .dday-btn.delete-btn:hover { color: #ef5350; }
+
+        .timetable-container { width: 100%; overflow-x: auto; margin-top: 10px; }
+        .timetable { width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; }
+        .timetable th, .timetable td { border: 1px solid var(--card-border); padding: 6px 2px; vertical-align: middle; }
+        .timetable th { background: rgba(0,0,0,0.2); font-weight: bold; color: var(--accent-color); }
+        .timetable td .subject { font-weight: bold; font-size: 12px; color: var(--text-color); }
+        .timetable td .teacher { font-size: 10px; color: var(--sub-text); }
+        .timetable td .room { font-size: 9px; color: #ffca28; }
+        .time-col { font-size: 10px; color: var(--sub-text); background: rgba(0,0,0,0.1); }
+        
+        .preparing-box { text-align: center; padding: 50px 20px; }
+        .preparing-box i { font-size: 48px; color: var(--accent-color); margin-bottom: 15px; }
+        .preparing-box h2 { font-size: 20px; margin: 0 0 10px 0; }
+        .preparing-box p { font-size: 14px; color: var(--sub-text); margin: 0; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; width: 85%; max-width: 340px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); color: var(--text-color); backdrop-filter: blur(15px); }
+        .modal-box h3 { margin-top: 0; font-size: 18px; margin-bottom: 12px; }
+        .modal-box p { font-size: 14px; color: var(--sub-text); margin-top: 0; margin-bottom: 20px; line-height: 1.4; }
+        .modal-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); color: var(--text-color); font-size: 14px; margin-bottom: 15px; text-align: left; resize: none; font-family: inherit; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: bold; }
+        .btn-confirm { background: var(--accent-color); color: white; }
+        .btn-danger { background: #ef5350; color: white; }
+        .btn-cancel { background: rgba(0,0,0,0.2); color: var(--sub-text); }
+        
+        .crop-container { width: 180px; height: 180px; border-radius: 50%; margin: 0 auto 15px auto; overflow: hidden; position: relative; border: 3px solid var(--accent-color); cursor: grab; background: #000; touch-action: none; }
+        .crop-image { position: absolute; top: 50%; left: 50%; transform-origin: center center; pointer-events: none; user-select: none; max-width: none; }
+        .zoom-slider { width: 80%; margin-bottom: 15px; accent-color: var(--accent-color); cursor: pointer; }
+        
+        .theme-options { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .theme-btn { padding: 14px; border-radius: 10px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.1); color: var(--text-color); font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+        .theme-preview { width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); }
+        
+        .credit-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--accent-color);
+            background: rgba(0,0,0,0.2);
+            color: var(--accent-color);
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .credit-btn:hover { background: var(--accent-color); color: #fff; }
+
+        .credit-content { text-align: left; font-size: 13px; line-height: 1.6; color: var(--text-color); }
+        .credit-item { margin-bottom: 12px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); }
+        .credit-label { font-weight: bold; color: var(--accent-color); margin-bottom: 4px; display: block; font-size: 12px; }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--card-border); box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; }
+        .nav-btn { background: none; border: none; color: var(--sub-text); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex: 1; height: 100%; transition: color 0.2s ease; }
+        .nav-btn i { font-size: 20px; display: block; }
+        .nav-btn span { font-size: 10px; margin-top: 4px; font-weight: 500; display: block; }
+        .nav-btn.active { color: var(--nav-active-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <canvas id="space-canvas"></canvas>
+
+    <div id="intro-screen">
+        <div class="intro-container" id="intro">
+            <div class="sub-title">언제든지 놀러오세요!</div>
+          <div class="sub-title">⭐️Early Access⭐️</div>
+            <div class="kor-title">은하수 속 놀이터</div>
+            <div class="main-eng-title">Milky Way Park</div>
+            <button class="start-btn" onclick="startApp()">시작하기</button>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div class="top-navbar">
+            <div class="money-badge">
+                <i class="fa-solid fa-coins"></i>
+                <span id="top-coin-display">0원</span>
+            </div>
+        </div>
+
+        <input type="file" id="avatar-input" accept="image/*" style="display: none;" onchange="onAvatarSelected(event)">
+        <input type="file" id="banner-input" accept="image/*" style="display: none;" onchange="changeBanner(event)">
+
+        <div id="modal" class="modal-overlay">
+            <div class="modal-box">
+                <h3>닉네임 변경</h3>
+                <input type="text" id="name-input" class="modal-input" style="text-align: center;" placeholder="새 닉네임 입력">
+                <div class="modal-btns">
+                    <button class="modal-btn btn-cancel" onclick="closeModal()">취소</button>
+                    <button class="modal-btn btn-confirm" onclick="saveName()">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="about-modal" class="modal-overlay">
+            <div class="modal-box">
+                <h3>자기소개 수정</h3>
+                <textarea id="about-input" class="modal-input" rows="4" placeholder="자기소개를 입력하세요..."></textarea>
+                <div class="modal-btns">
+                    <button class="modal-btn btn-cancel" onclick="closeAboutModal()">취소</button>
+                    <button class="modal-btn btn-confirm" onclick="saveAbout()">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="dday-modal" class="modal-overlay">
+            <div class="modal-box">
+                <h3 id="dday-modal-title">기념일 추가</h3>
+                <input type="text" id="dday-title-input" class="modal-input" style="text-align: center;" placeholder="기념일 이름 (예: 생일)">
+                <input type="date" id="dday-date-input" class="modal-input" style="text-align: center;">
+                <div class="modal-btns">
+                    <button class="modal-btn btn-cancel" onclick="closeDDayModal()">취소</button>
+                    <button class="modal-btn btn-confirm" onclick="saveCustomDDay()">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="delete-modal" class="modal-overlay">
+            <div class="modal-box">
+                <h3>기념일 삭제</h3>
+                <p>이 기념일을 삭제하시겠습니까?</p>
+                <div class="modal-btns">
+                    <button class="modal-btn btn-cancel" onclick="closeDeleteModal()">취소</button>
+                    <button class="modal-btn btn-danger" onclick="confirmDeleteDDay()">삭제</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="crop-modal" class="modal-overlay">
+            <div class="modal-box">
+                <h3>프로필 영역 조절</h3>
+                <div class="crop-container" id="crop-area">
+                    <img id="crop-img" class="crop-image" src="" alt="preview">
+                </div>
+                <input type="range" id="zoom-range" class="zoom-slider" min="1" max="3" step="0.05" value="1" oninput="updateCropTransform()">
+                <div class="modal-btns">
+                    <button class="modal-btn btn-cancel" onclick="closeCropModal()">취소</button>
+                    <button class="modal-btn btn-confirm" onclick="saveCroppedAvatar()">적용</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="credit-modal" class="modal-overlay">
+            <div class="modal-box">
+                <h3><i class="fa-solid fa-circle-info" style="color:var(--accent-color);"></i> 만들게 된 이유</h3>
+                <div class="credit-content">
+                    <div class="credit-item">
+                        <span class="credit-label">👤 제작자</span>
+                        <div>pyhoo</div>
+                    </div>
+                    <div class="credit-item">
+                        <span class="credit-label">✨ 사이트 이름의 유래</span>
+                        <div>은하수 속 놀이터 (Milky Way Park)는 제작자가 가장 좋아하는 요소인 '은하수'와 누구나 모여 즐겁게 시간을 보낼 수 있는 '놀이터'라는 상징을 합쳐 지은 이름입니다.</div>
+                    </div>
+                    <div class="credit-item">
+                        <span class="credit-label">💡 제작 의도</span>
+                        <div>처음 사이트를 만들기 시작할 때 의도가 사람들과 함께 편안하고 자유롭게 놀 수 있는 공간을 제공하는 것이었습니다.</div>
+                    </div>
+                </div>
+                <div class="modal-btns" style="margin-top:15px;">
+                    <button class="modal-btn btn-confirm" onclick="closeCreditModal()">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="content"></div>
+
+        <nav class="bottom-nav">
+            <button class="nav-btn active" onclick="loadPage('profile', this)"><i class="fa-solid fa-user"></i><span>프로필</span></button>
+            <button class="nav-btn" onclick="loadPage('study', this)"><i class="fa-solid fa-graduation-cap"></i><span>학습</span></button>
+            <button class="nav-btn" onclick="loadPage('quest', this)"><i class="fa-solid fa-scroll"></i><span>퀘스트</span></button>
+            <button class="nav-btn" onclick="loadPage('game', this)"><i class="fa-solid fa-gamepad"></i><span>게임</span></button>
+            <button class="nav-btn" onclick="loadPage('rank', this)"><i class="fa-solid fa-trophy"></i><span>랭킹</span></button>
+            <button class="nav-btn" onclick="loadPage('menu', this)"><i class="fa-solid fa-bars"></i><span>메뉴</span></button>
+        </nav>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('space-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 🌟 별빛
+        const stars = [];
+        for (let i = 0; i < 150; i++) {
+            stars.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                radius: Math.random() * 1.2 + 0.3,
+                alpha: Math.random(),
+                speed: Math.random() * 0.02 + 0.005
+            });
+        }
+
+        // ❄️ 눈송이
+        const snowflakes = [];
+        for (let i = 0; i < 180; i++) {
+            snowflakes.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                radius: Math.random() * 3 + 1.2,
+                speedY: Math.random() * 1.5 + 0.7,
+                speedX: Math.random() * 0.8 - 0.4,
+                opacity: Math.random() * 0.7 + 0.3
+            });
+        }
+
+        // 🍁 단풍잎
+        const leaves = [];
+        const leafColors = ['#d97706', '#dc2626', '#b45309', '#f59e0b', '#9a3412'];
+        for (let i = 0; i < 45; i++) {
+            leaves.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: Math.random() * 8 + 6,
+                speedY: Math.random() * 1.2 + 0.8,
+                speedX: Math.random() * 1.5 - 0.75,
+                angle: Math.random() * Math.PI * 2,
+                spin: (Math.random() - 0.5) * 0.04,
+                color: leafColors[Math.floor(Math.random() * leafColors.length)],
+                opacity: Math.random() * 0.5 + 0.5
+            });
+        }
+
+        function drawLeaf(ctx, x, y, size, angle, color, opacity) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.fillStyle = color;
+            ctx.globalAlpha = opacity;
+            ctx.beginPath();
+            ctx.moveTo(0, -size);
+            ctx.quadraticCurveTo(size * 0.8, -size * 0.3, size * 0.6, size * 0.4);
+            ctx.quadraticCurveTo(0, size * 0.6, -size * 0.6, size * 0.4);
+            ctx.quadraticCurveTo(-size * 0.8, -size * 0.3, 0, -size);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 🌊 파도 애니메이션
+        let waveTime = 0;
+
+        function drawWaveLayer(ctx, options) {
+            const { baseY, amplitude, frequency, speed, color, foamColor, foamThickness } = options;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+
+            for (let x = 0; x <= canvas.width; x += 3) {
+                const y = baseY + 
+                    Math.sin(x * frequency + waveTime * speed) * amplitude + 
+                    Math.cos(x * frequency * 0.5 + waveTime * speed * 0.7) * (amplitude * 0.4);
+                ctx.lineTo(x, y);
+            }
+
+            ctx.lineTo(canvas.width, 0);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            if (foamColor) {
+                ctx.beginPath();
+                for (let x = 0; x <= canvas.width; x += 3) {
+                    const y = baseY + 
+                        Math.sin(x * frequency + waveTime * speed) * amplitude + 
+                        Math.cos(x * frequency * 0.5 + waveTime * speed * 0.7) * (amplitude * 0.4);
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.strokeStyle = foamColor;
+                ctx.lineWidth = foamThickness || 4;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+            }
+        }
+
+        // 🐚 조개/소라 그리기 함수
+        function drawShell(ctx, x, y, size, mainColor, type = 'fan', angleDeg = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate((angleDeg * Math.PI) / 180);
+
+            ctx.fillStyle = "rgba(100, 70, 40, 0.12)";
+            ctx.beginPath();
+            ctx.ellipse(0, size * 0.35, size * 0.95, size * 0.35, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (type === 'fan') {
+                ctx.fillStyle = mainColor;
+                ctx.beginPath();
+                ctx.moveTo(0, size * 0.4);
+                ctx.bezierCurveTo(-size * 1.1, -size * 0.2, -size * 0.8, -size * 0.9, 0, -size * 0.95);
+                ctx.bezierCurveTo(size * 0.8, -size * 0.9, size * 1.1, -size * 0.2, 0, size * 0.4);
+                ctx.fill();
+
+                ctx.fillStyle = "rgba(0,0,0,0.08)";
+                ctx.beginPath();
+                ctx.rect(-size * 0.35, size * 0.3, size * 0.7, size * 0.15);
+                ctx.fill();
+
+                const ridges = [-0.65, -0.35, -0.1, 0.1, 0.35, 0.65];
+                ridges.forEach(r => {
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
+                    ctx.lineWidth = Math.max(1.5, size * 0.08);
+                    ctx.lineCap = "round";
+                    ctx.beginPath();
+                    ctx.moveTo(0, size * 0.35);
+                    ctx.quadraticCurveTo(r * size * 0.5, -size * 0.3, r * size * 0.9, -size * 0.85);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
+                    ctx.lineWidth = Math.max(1, size * 0.04);
+                    ctx.beginPath();
+                    ctx.moveTo(0, size * 0.35);
+                    ctx.quadraticCurveTo(r * size * 0.5 + 1.5, -size * 0.3, r * size * 0.9 + 1.5, -size * 0.85);
+                    ctx.stroke();
+                });
+
+                ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+                ctx.beginPath();
+                ctx.ellipse(0, -size * 0.4, size * 0.45, size * 0.25, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (type === 'spiral') {
+                const circles = [
+                    { x: 0, y: size * 0.3, r: size * 0.5 },
+                    { x: 0, y: size * 0.05, r: size * 0.4 },
+                    { x: 0, y: -size * 0.18, r: size * 0.3 },
+                    { x: 0, y: -size * 0.38, r: size * 0.2 },
+                    { x: 0, y: -size * 0.55, r: size * 0.1 }
+                ];
+
+                circles.forEach((c, idx) => {
+                    ctx.fillStyle = mainColor;
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.07)";
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y + c.r * 0.3, c.r * 0.9, 0, Math.PI);
+                    ctx.fill();
+
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+                    ctx.beginPath();
+                    ctx.arc(c.x - c.r * 0.3, c.y - c.r * 0.2, c.r * 0.3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+            } else if (type === 'clam') {
+                ctx.fillStyle = mainColor;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, size * 0.85, size * 0.65, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let i = 1; i <= 3; i++) {
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+                    ctx.lineWidth = Math.max(1.2, size * 0.06);
+                    ctx.beginPath();
+                    ctx.ellipse(0, size * 0.1, size * 0.22 * i, size * 0.15 * i, Math.PI, 0, Math.PI);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+                ctx.beginPath();
+                ctx.ellipse(-size * 0.2, -size * 0.2, size * 0.3, size * 0.15, -Math.PI / 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // 🏰 모래성
+        function drawSandCastle(ctx, x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            const sandColor = '#F2C94C';      
+            const shadowColor = '#E0B034';    
+            const roofColor = '#FF6B6B';      
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.beginPath();
+            ctx.ellipse(0, 5, 42, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = sandColor;
+            ctx.beginPath();
+            ctx.roundRect(-26, -22, 52, 24, [4, 4, 0, 0]);
+            ctx.fill();
+
+            ctx.fillStyle = shadowColor;
+            ctx.beginPath();
+            ctx.roundRect(0, -22, 26, 24, [0, 4, 0, 0]);
+            ctx.fill();
+
+            ctx.fillStyle = sandColor;
+            ctx.beginPath();
+            ctx.roundRect(-10, -42, 20, 22, [3, 3, 0, 0]);
+            ctx.fill();
+            ctx.fillStyle = shadowColor;
+            ctx.fillRect(0, -42, 10, 22);
+
+            ctx.fillStyle = sandColor;
+            ctx.beginPath();
+            ctx.roundRect(-26, -34, 11, 14, [2, 2, 0, 0]);
+            ctx.roundRect(15, -34, 11, 14, [2, 2, 0, 0]);
+            ctx.fill();
+
+            ctx.fillStyle = roofColor;
+            ctx.beginPath();
+            ctx.moveTo(-31, -34); ctx.lineTo(-20.5, -46); ctx.lineTo(-10, -34);
+            ctx.closePath(); ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(10, -34); ctx.lineTo(20.5, -46); ctx.lineTo(31, -34);
+            ctx.closePath(); ctx.fill();
+
+            ctx.fillStyle = '#6E473B';
+            ctx.beginPath();
+            ctx.arc(0, 2, 7, Math.PI, 0);
+            ctx.fill();
+
+            ctx.strokeStyle = '#A87A51';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, -42);
+            ctx.lineTo(0, -56);
+            ctx.stroke();
+
+            ctx.fillStyle = roofColor;
+            ctx.beginPath();
+            ctx.moveTo(0, -56);
+            ctx.lineTo(11, -51);
+            ctx.lineTo(0, -46);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        class ShootingStar {
+            constructor(isInitial = false) { 
+                this.reset(isInitial); 
+            }
+            reset(isInitial = false) {
+                this.x = Math.random() * (canvas.width * 1.2) - (canvas.width * 0.2);
+                this.y = Math.random() * -200;
+                this.length = Math.random() * 100 + 140; 
+                this.speed = Math.random() * 2 + 2; 
+                this.size = Math.random() * 1.2 + 0.8; 
+                // 접속하자마자 바로 떨어지도록 설정
+                if (isInitial) {
+                    this.waitTime = 0;
+                    this.active = true;
+                } else {
+                    this.waitTime = new Date().getTime() + Math.random() * 2500 + 500;
+                    this.active = false;
+                }
+            }
+            update() {
+                if (!this.active) {
+                    if (new Date().getTime() > this.waitTime) this.active = true;
+                    return;
+                }
+                this.x -= this.speed * 1.2;
+                this.y += this.speed;
+                if (this.x < -300 || this.y > canvas.height + 300) this.reset(false);
+            }
+            draw() {
+                if (!this.active) return;
+                const angle = Math.atan2(this.speed, -this.speed * 1.2);
+                const tailX = this.x - Math.cos(angle) * this.length;
+                const tailY = this.y - Math.sin(angle) * this.length;
+                const grad = ctx.createLinearGradient(this.x, this.y, tailX, tailY);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                grad.addColorStop(1, 'rgba(147, 197, 253, 0)');
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(tailX, tailY);
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = this.size;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+        // 첫 화면 진입 시 즉시 떨어지도록 true 전달
+        const meteors = Array.from({ length: 4 }, () => new ShootingStar(true));
+
+        function animate() {
+            if (document.body.classList.contains('theme-snow')) {
+                ctx.fillStyle = '#0b1120';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height);
+                ctx.lineTo(0, canvas.height - 40);
+                ctx.quadraticCurveTo(canvas.width / 4, canvas.height - 55, canvas.width / 2, canvas.height - 40);
+                ctx.quadraticCurveTo((canvas.width * 3) / 4, canvas.height - 25, canvas.width, canvas.height - 45);
+                ctx.lineTo(canvas.width, canvas.height);
+                ctx.closePath();
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                snowflakes.forEach(flake => {
+                    flake.y += flake.speedY;
+                    flake.x += flake.speedX + Math.sin(flake.y * 0.02) * 0.3;
+
+                    if (flake.y > canvas.height - 35) {
+                        flake.y = -10;
+                        flake.x = Math.random() * canvas.width;
+                    }
+                    if (flake.x > canvas.width) flake.x = 0;
+                    if (flake.x < 0) flake.x = canvas.width;
+
+                    ctx.beginPath();
+                    ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${flake.opacity})`;
+                    ctx.shadowBlur = 6;
+                    ctx.shadowColor = '#ffffff';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                });
+            } else if (document.body.classList.contains('theme-autumn')) {
+                ctx.fillStyle = '#1c0d02';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                leaves.forEach(leaf => {
+                    leaf.y += leaf.speedY;
+                    leaf.x += leaf.speedX + Math.sin(leaf.y * 0.015);
+                    leaf.angle += leaf.spin;
+
+                    if (leaf.y > canvas.height + 20) {
+                        leaf.y = -20;
+                        leaf.x = Math.random() * canvas.width;
+                    }
+                    if (leaf.x > canvas.width + 20) leaf.x = -20;
+                    if (leaf.x < -20) leaf.x = canvas.width + 20;
+
+                    drawLeaf(ctx, leaf.x, leaf.y, leaf.size, leaf.angle, leaf.color, leaf.opacity);
+                });
+            } else if (document.body.classList.contains('theme-summer')) {
+                ctx.fillStyle = '#f3e5ab';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                waveTime += 0.03;
+
+                const baseHeight = canvas.height * 0.42;
+                const wavePush = Math.sin(waveTime * 0.8) * (canvas.height * 0.12);
+
+                const sandY = canvas.height * 0.78;
+                drawSandCastle(ctx, canvas.width * 0.75, sandY);
+                
+                drawShell(ctx, canvas.width * 0.18, sandY + 15, 20, '#FF9EF1', 'fan', -15);
+                drawShell(ctx, canvas.width * 0.32, sandY + 38, 22, '#FFC076', 'spiral', 25);
+                drawShell(ctx, canvas.width * 0.88, sandY + 22, 16, '#74B9FF', 'clam', 10);
+                drawShell(ctx, canvas.width * 0.52, sandY + 42, 15, '#FFEAA7', 'fan', 5);
+                drawShell(ctx, canvas.width * 0.08, sandY + 30, 18, '#A29BFE', 'spiral', -40);
+
+                const gradDeep = ctx.createLinearGradient(0, 0, 0, baseHeight + wavePush);
+                gradDeep.addColorStop(0, '#0284c7');
+                gradDeep.addColorStop(1, '#0369a1');
+
+                drawWaveLayer(ctx, {
+                    baseY: baseHeight + wavePush - 25,
+                    amplitude: 18,
+                    frequency: 0.008,
+                    speed: 0.6,
+                    color: gradDeep,
+                    foamColor: 'rgba(255, 255, 255, 0.4)',
+                    foamThickness: 3
+                });
+
+                const gradMid = ctx.createLinearGradient(0, 0, 0, baseHeight + wavePush);
+                gradMid.addColorStop(0, '#38bdf8');
+                gradMid.addColorStop(1, '#0284c7');
+
+                drawWaveLayer(ctx, {
+                    baseY: baseHeight + wavePush,
+                    amplitude: 22,
+                    frequency: 0.012,
+                    speed: 1.0,
+                    color: gradMid,
+                    foamColor: 'rgba(255, 255, 255, 0.7)',
+                    foamThickness: 5
+                });
+
+                const gradShallow = ctx.createLinearGradient(0, 0, 0, baseHeight + wavePush + 20);
+                gradShallow.addColorStop(0, 'rgba(56, 189, 248, 0.85)');
+                gradShallow.addColorStop(1, 'rgba(125, 211, 252, 0.95)');
+
+                drawWaveLayer(ctx, {
+                    baseY: baseHeight + wavePush + 20,
+                    amplitude: 15,
+                    frequency: 0.015,
+                    speed: 1.4,
+                    color: gradShallow,
+                    foamColor: '#ffffff',
+                    foamThickness: 8
+                });
+
+            } else {
+                ctx.fillStyle = '#030308';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                stars.forEach(star => {
+                    star.alpha += star.speed;
+                    if (star.alpha > 1 || star.alpha < 0.2) star.speed = -star.speed;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                    ctx.fill();
+                });
+                meteors.forEach(meteor => {
+                    meteor.update();
+                    meteor.draw();
+                });
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        function startApp() {
+            document.getElementById('intro-screen').classList.add('fade-out');
+            setTimeout(() => {
+                document.body.style.overflow = 'auto';
+                document.getElementById('main-app').style.display = 'block';
+                setTheme('dark');
+                loadPage('profile', document.querySelector('.nav-btn.active'));
+            }, 800);
+        }
+
+        let userData = { 
+            name: "oo님", rank: "??위", coin: 0, point: 0, 
+            avatarUrl: null, bannerUrl: null, currentTheme: 'dark',
+            aboutMe: localStorage.getItem('user_about_me') || "여기에 자신을 소개하는 글을 작성해보세요."
+        };
+        
+        let customDDays = JSON.parse(localStorage.getItem('user_ddays')) || [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }];
+        let editingDDayId = null, deletingDDayId = null;
+
+        function updateTopMoney() {
+            const coinDisplay = document.getElementById('top-coin-display');
+            if (coinDisplay) coinDisplay.textContent = `${userData.coin.toLocaleString()}원`;
+        }
+
+        function calculateDDay(targetDate) {
+            const today = new Date(); today.setHours(0, 0, 0, 0); 
+            const target = new Date(targetDate); target.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+            if (diffDays === 0) return "D-Day";
+            return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
+        }
+
+        let imgScale = 1, imgPosX = 0, imgPosY = 0, isDragging = false, startX = 0, startY = 0, rawImgObj = new Image();
+
+        function updateCropTransform() {
+            const img = document.getElementById('crop-img');
+            const slider = document.getElementById('zoom-range');
+            if (img && slider) {
+                imgScale = parseFloat(slider.value);
+                img.style.transform = `translate(-50%, -50%) translate(${imgPosX}px, ${imgPosY}px) scale(${imgScale})`;
+            }
+        }
+
+        function initCropEvents() {
+            const cropArea = document.getElementById('crop-area');
+            const startDrag = (e) => {
+                isDragging = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                startX = clientX - imgPosX; startY = clientY - imgPosY;
+            };
+            const doDrag = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                imgPosX = clientX - startX; imgPosY = clientY - startY;
+                updateCropTransform();
+            };
+            const stopDrag = () => { isDragging = false; };
+            cropArea.addEventListener('mousedown', startDrag);
+            window.addEventListener('mousemove', doDrag);
+            window.addEventListener('mouseup', stopDrag);
+            cropArea.addEventListener('touchstart', startDrag, { passive: false });
+            window.addEventListener('touchmove', doDrag, { passive: false });
+            window.addEventListener('touchend', stopDrag);
+        }
+
+        function setTheme(themeName) {
+            userData.currentTheme = themeName; 
+            document.body.className = '';
+            document.body.style.background = '';
+
+            if (themeName !== 'dark') {
+                document.body.classList.add('theme-' + themeName);
+            } else {
+                document.body.style.background = '#030308';
+            }
+
+            const activeBtn = document.querySelector('.nav-btn.active');
+            if (activeBtn && activeBtn.getAttribute('onclick').includes('menu')) loadPage('menu', activeBtn);
+        }
+
+        function loadPage(page, btn) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            updateTopMoney();
+
+            const content = document.getElementById('content');
+            if (page === 'profile') {
+                const bannerStyle = userData.bannerUrl ? `background-image: url('${userData.bannerUrl}');` : '';
+                const avatarHTML = userData.avatarUrl ? `<img src="${userData.avatarUrl}" class="avatar">` : `<div class="avatar"><i class="fa-solid fa-user"></i></div>`;
+                content.innerHTML = `
+                    <div class="card profile-card">
+                        <div class="banner-container" style="${bannerStyle}">
+                            <button class="edit-banner-btn" onclick="document.getElementById('banner-input').click()"><i class="fa-solid fa-pen"></i></button>
+                        </div>
+                        <div class="profile-body">
+                            <div class="avatar-wrapper">${avatarHTML}<button class="edit-avatar-btn" onclick="document.getElementById('avatar-input').click()"><i class="fa-solid fa-pen"></i></button></div>
+                            <div class="user-info">
+                                <div class="user-info-header">
+                                    <h2>${userData.name}</h2>
+                                    <button class="edit-name-btn" onclick="openModal()"><i class="fa-solid fa-pen"></i></button>
+                                </div>
+                                <span class="badge"><i class="fa-solid fa-trophy" style="font-size:10px; margin-right:4px;"></i>${userData.rank}</span>
+                            </div>
+                            <div class="about-me-box">
+                                <div class="about-me-header">
+                                    <span class="about-me-title">자기소개</span>
+                                    <button class="edit-name-btn" onclick="openAboutModal()"><i class="fa-solid fa-pen"></i></button>
+                                </div>
+                                <div class="about-me-content">${userData.aboutMe}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 style="margin-top:0; font-size:16px;"><i class="fa-solid fa-wallet" style="color:var(--accent-color);"></i> 내 자산 & 스탯</h3>
+                        <div class="stats-grid">
+                            <div class="stat-item"><div class="stat-title">보유 코인</div><div class="stat-value" style="color:#ffca28;">${userData.coin.toLocaleString()}원</div></div>
+                            <div class="stat-item"><div class="stat-title">랭크 포인트</div><div class="stat-value" style="color:#42a5f5;">${userData.point} P</div></div>
+                        </div>
+                    </div>`;
+            } else if (page === 'study') {
+                content.innerHTML = `
+                    <div class="card" style="text-align:left;">
+                        <div class="card-header-flex">
+                            <h3 style="margin:0; font-size:16px;"><i class="fa-solid fa-calendar-check" style="color:var(--accent-color);"></i> D-Day</h3>
+                            <button class="add-dday-btn" onclick="openDDayModal()">+ 기념일 추가</button>
+                        </div>
+                        <div class="dday-list" id="dday-list-container"></div>
+                    </div>
+                    <div class="card" style="text-align:left;">
+                        <h3 style="margin-top:0; font-size:16px;"><i class="fa-solid fa-table" style="color:var(--accent-color);"></i> 주간 시간표</h3>
+                        <div class="timetable-container">
+                            <table class="timetable">
+                                <thead><tr><th>교시</th><th>월(24)</th><th>화(25)</th><th>수(26)</th><th>목(27)</th><th>금(28)</th></tr></thead>
+                                <tbody>
+                                    <tr><td class="time-col">1</td><td><div class="subject">영어</div><div class="teacher">하*연</div></td><td><div class="subject">체육</div><div class="teacher">권*관</div></td><td><div class="subject">기가</div><div class="teacher">박*정</div></td><td><div class="subject">국어</div><div class="teacher">박*정</div></td><td><div class="subject">과학</div><div class="teacher">양*빈</div></td></tr>
+                                    <tr><td class="time-col">2</td><td><div class="subject">체육</div><div class="teacher">권*관</div></td><td><div class="subject">국어</div><div class="teacher">박*정</div></td><td><div class="subject">사회</div><div class="teacher">김*화</div></td><td><div class="subject">미술</div><div class="teacher">이*정</div></td><td><div class="subject">정보A</div><div class="teacher">오*철</div></td></tr>
+                                    <tr><td class="time-col">3</td><td><div class="subject">수학</div><div class="teacher">김*경</div></td><td><div class="subject">영어</div><div class="teacher">박*연</div></td><td><div class="subject">체육</div><div class="teacher">권*관</div></td><td><div class="subject">진로</div><div class="teacher">류*선</div></td><td><div class="subject">국어</div><div class="teacher">박*정</div></td></tr>
+                                    <tr><td class="time-col">4</td><td><div class="subject">과학</div><div class="teacher">양*빈</div></td><td><div class="subject">수학</div><div class="teacher">김*경</div></td><td><div class="subject">수학</div><div class="teacher">김*경</div></td><td><div class="subject">사회</div><div class="teacher">김*화</div></td><td><div class="subject">기가</div><div class="teacher">박*정</div></td></tr>
+                                    <tr><td class="time-col">5</td><td><div class="subject">클럽</div><div class="teacher">홍*미</div></td><td><div class="subject">미술</div><div class="teacher">이*정</div></td><td><div class="subject">국어</div><div class="teacher">박*정</div></td><td><div class="subject">영어</div><div class="teacher">박*연</div></td><td><div class="subject">정보B</div><div class="teacher">김*일</div></td></tr>
+                                    <tr><td class="time-col">6</td><td><div class="subject">도덕</div><div class="teacher">박*인</div></td><td><div class="subject">사회</div><div class="teacher">김*화</div></td><td><div class="subject">자율</div><div class="teacher">자*</div></td><td><div class="subject">수학</div><div class="teacher">김*경</div></td><td><div class="subject">영어</div><div class="teacher">박*연</div></td></tr>
+                                    <tr><td class="time-col">7</td><td>-</td><td><div class="subject">도덕</div><div class="teacher">박*인</div></td><td>-</td><td><div class="subject">과학</div><div class="teacher">양*빈</div></td><td>-</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>`;
+                renderDDays();
+            } else if (page === 'quest') {
+                content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-scroll"></i><h2>퀘스트 시스템 업데이트 예정</h2><p>일일 퀘스트, 도전 과제 및 보상 기능이 추가될 예정입니다.</p></div>`;
+            } else if (page === 'game') {
+                content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-gamepad"></i><h2>게임 센터 업데이트 예정</h2><p>주식, 도박 시뮬레이션, 낚시, 무기 강화 기능이 추가될 예정입니다.</p></div>`;
+            } else if (page === 'rank') {
+                content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-trophy"></i><h2>랭킹 시스템 업데이트 예정</h2><p>준비 중입니다.</p></div>`;
+            } else if (page === 'menu') {
+                content.innerHTML = `
+                    <div class="card" style="text-align:left;">
+                        <h2 style="margin-top:0; font-size:18px;"><i class="fa-solid fa-palette"></i> 환경 설정 - 테마</h2>
+                        <div class="theme-options">
+                            <button class="theme-btn" onclick="setTheme('dark')"><span>🌙 다크 테마</span><div class="theme-preview" style="background:#030308;"></div></button>
+                            <button class="theme-btn" onclick="setTheme('light')"><span>☀️ 라이트 테마</span><div class="theme-preview" style="background:#ffffff;"></div></button>
+                            <button class="theme-btn" onclick="setTheme('aurora')"><span>🌌 오로라 테마</span><div class="theme-preview" style="background:#004d40;"></div></button>
+                            <button class="theme-btn" onclick="setTheme('sunset')"><span>🌅 노을 테마</span><div class="theme-preview" style="background:#ff5e36;"></div></button>
+                            <button class="theme-btn" onclick="setTheme('neon')"><span>👾 네온 테마</span><div class="theme-preview" style="background:#ff007f;"></div></button>
+                            <button class="theme-btn" onclick="setTheme('lavender')"><span>🪻 라벤더 테마</span><div class="theme-preview" style="background:#c084fc;"></div></button>
+                            <button class="theme-btn" onclick="setTheme('deepspace')"><span>🚀 딥 스페이스 테마</span><div class="theme-preview" style="background:#1e1b4b;"></div></button>
+                            <button class="theme-btn" onclick="setTheme('summer')"><span>🏖️ 여름 테마</span><div class="theme-preview" style="background:#38bdf8;"></div></button>
+                            <button class="theme-btn" onclick="setTheme('autumn')"><span>🍁 가을 테마</span><div class="theme-preview" style="background:#d97706;"></div></button>
+                            <button class="theme-btn" onclick="setTheme('snow')"><span>❄️ 겨울 테마</span><div class="theme-preview" style="background:#38bdf8;"></div></button>
+                        </div>
+                    </div>
+                    <div class="card" style="text-align:left;">
+                        <h2 style="margin-top:0; font-size:18px;"><i class="fa-solid fa-circle-info"></i> 정보</h2>
+                        <button class="credit-btn" onclick="openCreditModal()">
+                            <i class="fa-solid fa-award"></i> 크레딧
+                        </button>
+                    </div>`;
+            }
+        }
+        
+        function openCreditModal() { document.getElementById('credit-modal').style.display = 'flex'; }
+        function closeCreditModal() { document.getElementById('credit-modal').style.display = 'none'; }
+
+        function renderDDays() {
+            const container = document.getElementById('dday-list-container');
+            if(!container) return;
+            if (customDDays.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--sub-text); font-size:13px;">등록된 기념일이 없습니다.</div>`;
+                return;
+            }
+            container.innerHTML = customDDays.map(item => `
+                <div class="dday-item">
+                    <div class="dday-info"><span class="dday-title">${item.title}</span></div>
+                    <div class="dday-actions">
+                        <span class="dday-tag">${calculateDDay(item.date)}</span>
+                        <button class="dday-btn" onclick="openDDayModal(${item.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="dday-btn delete-btn" onclick="openDeleteModal(${item.id})"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openModal() { document.getElementById('name-input').value = userData.name; document.getElementById('modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        function saveName() { userData.name = document.getElementById('name-input').value.trim(); closeModal(); loadPage('profile', document.querySelector('.nav-btn.active')); }
+        
+        function openAboutModal() { document.getElementById('about-input').value = userData.aboutMe; document.getElementById('about-modal').style.display = 'flex'; }
+        function closeAboutModal() { document.getElementById('about-modal').style.display = 'none'; }
+        function saveAbout() { 
+            userData.aboutMe = document.getElementById('about-input').value.trim() || "자기소개가 없습니다."; 
+            localStorage.setItem('user_about_me', userData.aboutMe);
+            closeAboutModal(); loadPage('profile', document.querySelector('.nav-btn.active')); 
+        }
+
+        function openDDayModal(id = null) { 
+            editingDDayId = id;
+            const modalTitle = document.getElementById('dday-modal-title');
+            const titleInput = document.getElementById('dday-title-input');
+            const dateInput = document.getElementById('dday-date-input');
+            if (id !== null) {
+                const target = customDDays.find(item => item.id === id);
+                if (target) { modalTitle.textContent = "기념일 수정"; titleInput.value = target.title; dateInput.value = target.date; }
+            } else { modalTitle.textContent = "기념일 추가"; titleInput.value = ""; dateInput.value = ""; }
+            document.getElementById('dday-modal').style.display = 'flex'; 
+        }
+        function closeDDayModal() { document.getElementById('dday-modal').style.display = 'none'; editingDDayId = null; }
+        function saveCustomDDay() { 
+            const t = document.getElementById('dday-title-input').value.trim(); 
+            const d = document.getElementById('dday-date-input').value; 
+            if(!t || !d) return;
+            if (editingDDayId !== null) {
+                const target = customDDays.find(item => item.id === editingDDayId);
+                if (target) { target.title = t; target.date = d; }
+            } else { customDDays.push({ id: Date.now(), title: t, date: d }); }
+            localStorage.setItem('user_ddays', JSON.stringify(customDDays)); 
+            closeDDayModal(); renderDDays(); 
+        }
+
+        function openDeleteModal(id) { deletingDDayId = id; document.getElementById('delete-modal').style.display = 'flex'; }
+        function closeDeleteModal() { document.getElementById('delete-modal').style.display = 'none'; deletingDDayId = null; }
+        function confirmDeleteDDay() {
+            if (deletingDDayId !== null) {
+                customDDays = customDDays.filter(item => item.id !== deletingDDayId);
+                localStorage.setItem('user_ddays', JSON.stringify(customDDays));
+                renderDDays();
+            }
+            closeDeleteModal();
+        }
+        
+        function onAvatarSelected(e) { 
+            const f = e.target.files[0]; if(!f) return; 
+            const reader = new FileReader(); 
+            reader.onload = (ev) => { 
+                rawImgObj.src = ev.target.result; 
+                rawImgObj.onload = () => { 
+                    const cropImg = document.getElementById('crop-img');
+                    cropImg.src = ev.target.result; 
+                    imgScale = 1; imgPosX = 0; imgPosY = 0;
+                    document.getElementById('zoom-range').value = 1;
+                    cropImg.style.width = rawImgObj.width > rawImgObj.height ? 'auto' : '180px';
+                    cropImg.style.height = rawImgObj.width > rawImgObj.height ? '180px' : 'auto';
+                    updateCropTransform();
+                    document.getElementById('crop-modal').style.display = 'flex'; 
+                }; 
+            }; 
+            reader.readAsDataURL(f); 
+        }
+        function closeCropModal() { document.getElementById('crop-modal').style.display = 'none'; }
+        function saveCroppedAvatar() { 
+            const canvas = document.createElement('canvas');
+            canvas.width = 180; canvas.height = 180;
+            const ctx = canvas.getContext('2d');
+            const cropImg = document.getElementById('crop-img');
+            ctx.save(); ctx.beginPath(); ctx.arc(90, 90, 90, 0, Math.PI * 2); ctx.clip();
+            const renderW = cropImg.offsetWidth * imgScale, renderH = cropImg.offsetHeight * imgScale;
+            ctx.drawImage(rawImgObj, (180 - renderW) / 2 + imgPosX, (180 - renderH) / 2 + imgPosY, renderW, renderH);
+            ctx.restore();
+            userData.avatarUrl = canvas.toDataURL(); 
+            closeCropModal(); loadPage('profile', document.querySelector('.nav-btn.active')); 
+        }
+        function changeBanner(e) { const f = e.target.files[0]; if(f) { const r = new FileReader(); r.onload = (ev) => { userData.bannerUrl = ev.target.result; loadPage('profile', document.querySelector('.nav-btn.active')); }; r.readAsDataURL(f); } }
+        
+        window.onload = () => { initCropEvents(); };
+    </script>
+</body>
+</html>
