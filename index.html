@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Milky Way Park</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,12 +72,27 @@
             --accent-color: #0284c7;
             --nav-active-color: #0284c7;
         }
+        
+        body.theme-custom-image {
+            --bg-color: transparent;
+            --card-bg: rgba(25, 25, 30, 0.75);
+            --card-border: rgba(255, 255, 255, 0.25);
+            --text-color: #ffffff;
+            --sub-text: #9ca3af;
+            --nav-bg: rgba(20, 20, 25, 0.9);
+            --accent-color: #6c757d;
+            --nav-active-color: #9ca3af;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            background-attachment: fixed !important;
+        }
 
         body {
             width: 100vw;
-            height: 100vh;
+            min-height: 100dvh;
             background: #030308;
-            overflow: hidden;
+            overflow-x: hidden;
             font-family: 'Noto Sans KR', sans-serif;
             color: #ffffff;
         }
@@ -117,9 +132,9 @@
         .kor-title { font-size: 1.3rem; font-weight: 500; color: #93c5fd; margin-bottom: 14px; letter-spacing: 4px; }
         .main-eng-title {
             font-family: 'Cinzel', serif;
-            font-size: 2.8rem;
+            font-size: clamp(2.2rem, 8vw, 3.2rem);
             font-weight: 800;
-            letter-spacing: 5px;
+            letter-spacing: 4px;
             margin-bottom: 35px;
             background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 45%, #93c5fd 100%);
             -webkit-background-clip: text;
@@ -154,7 +169,7 @@
             z-index: 3;
             display: none;
             width: 100%;
-            min-height: 100vh;
+            min-height: 100dvh;
             background: var(--bg-color);
             background-attachment: fixed;
             color: var(--text-color);
@@ -163,8 +178,49 @@
             transition: background 0.3s ease, color 0.3s ease;
         }
 
-        .top-navbar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: var(--nav-bg); border-bottom: 1px solid var(--card-border); display: flex; justify-content: flex-end; align-items: center; padding: 0 15px; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-        .top-navbar .money-badge { background: rgba(0, 0, 0, 0.3); color: #ffca28; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 1px solid rgba(255, 202, 40, 0.3); display: flex; align-items: center; gap: 6px; }
+        .top-navbar { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 50px; 
+            background: var(--nav-bg); 
+            border-bottom: 1px solid var(--card-border); 
+            display: flex; 
+            justify-content: flex-end; 
+            align-items: center; 
+            padding: 0 15px; 
+            gap: 10px;
+            z-index: 1000; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
+        }
+        .top-navbar .money-badge { 
+            background: rgba(0, 0, 0, 0.3); 
+            color: #ffca28; 
+            padding: 5px 12px; 
+            border-radius: 20px; 
+            font-size: 13px; 
+            font-weight: bold; 
+            border: 1px solid rgba(255, 202, 40, 0.3); 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+        }
+        .settings-icon-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+        .settings-icon-btn:hover { background: rgba(255, 255, 255, 0.1); transform: rotate(30deg); }
 
         #content { padding: 15px; }
         .card { background: var(--card-bg); border-radius: 14px; padding: 18px; margin-bottom: 12px; border: 1px solid var(--card-border); box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; position: relative; backdrop-filter: blur(10px); }
@@ -207,7 +263,6 @@
         .timetable th { background: rgba(0,0,0,0.2); font-weight: bold; color: var(--accent-color); }
         .timetable td .subject { font-weight: bold; font-size: 12px; color: var(--text-color); }
         .timetable td .teacher { font-size: 10px; color: var(--sub-text); }
-        .timetable td .room { font-size: 9px; color: #ffca28; }
         .time-col { font-size: 10px; color: var(--sub-text); background: rgba(0,0,0,0.1); }
         
         .preparing-box { text-align: center; padding: 50px 20px; }
@@ -215,8 +270,26 @@
         .preparing-box h2 { font-size: 20px; margin: 0 0 10px 0; }
         .preparing-box p { font-size: 14px; color: var(--sub-text); margin: 0; }
 
+        .empty-shop-box {
+            text-align: center;
+            padding: 50px 20px;
+            background: rgba(0, 0, 0, 0.1);
+            border: 1px dashed var(--card-border);
+            border-radius: 14px;
+            margin-top: 10px;
+        }
+        .empty-icon {
+            font-size: 52px;
+            margin-bottom: 15px;
+            animation: float 2.5s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: 2000; }
-        .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; width: 85%; max-width: 340px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); color: var(--text-color); backdrop-filter: blur(15px); }
+        .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; width: 85%; max-width: 360px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); color: var(--text-color); backdrop-filter: blur(15px); max-height: 85vh; overflow-y: auto; }
         .modal-box h3 { margin-top: 0; font-size: 18px; margin-bottom: 12px; }
         .modal-box p { font-size: 14px; color: var(--sub-text); margin-top: 0; margin-bottom: 20px; line-height: 1.4; }
         .modal-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); color: var(--text-color); font-size: 14px; margin-bottom: 15px; text-align: left; resize: none; font-family: inherit; }
@@ -230,19 +303,19 @@
         .crop-image { position: absolute; top: 50%; left: 50%; transform-origin: center center; pointer-events: none; user-select: none; max-width: none; }
         .zoom-slider { width: 80%; margin-bottom: 15px; accent-color: var(--accent-color); cursor: pointer; }
         
-        .theme-options { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-        .theme-btn { padding: 14px; border-radius: 10px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.1); color: var(--text-color); font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
-        .theme-preview { width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); }
+        .theme-options { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 240px; overflow-y: auto; padding-right: 4px; }
+        .theme-btn { padding: 12px; border-radius: 10px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.1); color: var(--text-color); font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+        .theme-preview { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); }
         
         .credit-btn {
             width: 100%;
-            padding: 14px;
-            margin-top: 15px;
+            padding: 12px;
+            margin-top: 10px;
             border-radius: 10px;
             border: 1px solid var(--accent-color);
             background: rgba(0,0,0,0.2);
             color: var(--accent-color);
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
@@ -271,7 +344,7 @@
     <div id="intro-screen">
         <div class="intro-container" id="intro">
             <div class="sub-title">언제든지 놀러오세요!</div>
-          <div class="sub-title">⭐️Early Access⭐️</div>
+            <div class="sub-title">⭐️Early Access⭐️</div>
             <div class="kor-title">은하수 속 놀이터</div>
             <div class="main-eng-title">Milky Way Park</div>
             <button class="start-btn" onclick="startApp()">시작하기</button>
@@ -284,10 +357,14 @@
                 <i class="fa-solid fa-coins"></i>
                 <span id="top-coin-display">0원</span>
             </div>
+            <button class="settings-icon-btn" onclick="openSettingsModal()" title="설정">
+                <i class="fa-solid fa-gear"></i>
+            </button>
         </div>
 
         <input type="file" id="avatar-input" accept="image/*" style="display: none;" onchange="onAvatarSelected(event)">
         <input type="file" id="banner-input" accept="image/*" style="display: none;" onchange="changeBanner(event)">
+        <input type="file" id="theme-image-input" accept="image/*" style="display: none;" onchange="setCustomImageTheme(event)">
 
         <div id="modal" class="modal-overlay">
             <div class="modal-box">
@@ -348,6 +425,37 @@
             </div>
         </div>
 
+        <!-- 설정 모달 (테마 및 크레딧) -->
+        <div id="settings-modal" class="modal-overlay">
+            <div class="modal-box" style="text-align:left;">
+                <h3 style="text-align:center;"><i class="fa-solid fa-gear" style="color:var(--accent-color);"></i> 환경 설정</h3>
+                
+                <h4 style="font-size:14px; margin-top:10px; color:var(--sub-text);"><i class="fa-solid fa-palette"></i> 테마 선택</h4>
+                <div class="theme-options">
+                    <button class="theme-btn" onclick="document.getElementById('theme-image-input').click()" style="border: 1px dashed var(--accent-color);"><span>🖼️ 커스텀 이미지 (업로드)</span><div class="theme-preview" style="background:#6c757d; display:flex; align-items:center; justify-content:center; font-size:10px;">📷</div></button>
+                    <button class="theme-btn" onclick="setTheme('dark')"><span>🌙 다크 테마</span><div class="theme-preview" style="background:#030308;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('light')"><span>☀️ 라이트 테마</span><div class="theme-preview" style="background:#ffffff;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('aurora')"><span>🌌 오로라 테마</span><div class="theme-preview" style="background:#004d40;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('sunset')"><span>🌅 노을 테마</span><div class="theme-preview" style="background:#ff5e36;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('neon')"><span>👾 네온 테마</span><div class="theme-preview" style="background:#ff007f;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('lavender')"><span>🪻 라벤더 테마</span><div class="theme-preview" style="background:#c084fc;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('deepspace')"><span>🚀 딥 스페이스 테마</span><div class="theme-preview" style="background:#1e1b4b;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('summer')"><span>🏖️ 여름 테마</span><div class="theme-preview" style="background:#38bdf8;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('autumn')"><span>🍁 가을 테마</span><div class="theme-preview" style="background:#d97706;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('snow')"><span>❄️ 겨울 테마</span><div class="theme-preview" style="background:#38bdf8;"></div></button>
+                </div>
+
+                <h4 style="font-size:14px; margin-top:15px; color:var(--sub-text);"><i class="fa-solid fa-circle-info"></i> 앱 정보</h4>
+                <button class="credit-btn" onclick="openCreditModal()">
+                    <i class="fa-solid fa-award"></i> 크레딧 확인하기
+                </button>
+
+                <div class="modal-btns" style="margin-top:20px;">
+                    <button class="modal-btn btn-confirm" onclick="closeSettingsModal()">닫기</button>
+                </div>
+            </div>
+        </div>
+
         <div id="credit-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3><i class="fa-solid fa-circle-info" style="color:var(--accent-color);"></i> 만들게 된 이유</h3>
@@ -379,7 +487,7 @@
             <button class="nav-btn" onclick="loadPage('quest', this)"><i class="fa-solid fa-scroll"></i><span>퀘스트</span></button>
             <button class="nav-btn" onclick="loadPage('game', this)"><i class="fa-solid fa-gamepad"></i><span>게임</span></button>
             <button class="nav-btn" onclick="loadPage('rank', this)"><i class="fa-solid fa-trophy"></i><span>랭킹</span></button>
-            <button class="nav-btn" onclick="loadPage('menu', this)"><i class="fa-solid fa-bars"></i><span>메뉴</span></button>
+            <button class="nav-btn" onclick="loadPage('shop', this)"><i class="fa-solid fa-store"></i><span>상점</span></button>
         </nav>
     </div>
 
@@ -394,7 +502,6 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // 🌟 별빛
         const stars = [];
         for (let i = 0; i < 150; i++) {
             stars.push({
@@ -406,7 +513,6 @@
             });
         }
 
-        // ❄️ 눈송이
         const snowflakes = [];
         for (let i = 0; i < 180; i++) {
             snowflakes.push({
@@ -419,7 +525,6 @@
             });
         }
 
-        // 🍁 단풍잎
         const leaves = [];
         const leafColors = ['#d97706', '#dc2626', '#b45309', '#f59e0b', '#9a3412'];
         for (let i = 0; i < 45; i++) {
@@ -451,19 +556,19 @@
             ctx.restore();
         }
 
-        // 🌊 파도 애니메이션
         let waveTime = 0;
 
-        function drawWaveLayer(ctx, options) {
-            const { baseY, amplitude, frequency, speed, color, foamColor, foamThickness } = options;
+        function drawTopDownWaveLayer(ctx, options) {
+            const { reachY, amplitude, frequency, speed, color, foamColor } = options;
             
+            ctx.save();
             ctx.beginPath();
             ctx.moveTo(0, 0);
 
-            for (let x = 0; x <= canvas.width; x += 3) {
-                const y = baseY + 
+            for (let x = 0; x <= canvas.width; x += 5) {
+                const y = reachY + 
                     Math.sin(x * frequency + waveTime * speed) * amplitude + 
-                    Math.cos(x * frequency * 0.5 + waveTime * speed * 0.7) * (amplitude * 0.4);
+                    Math.cos(x * frequency * 0.6 - waveTime * speed * 0.9) * (amplitude * 0.5);
                 ctx.lineTo(x, y);
             }
 
@@ -474,181 +579,101 @@
 
             if (foamColor) {
                 ctx.beginPath();
-                for (let x = 0; x <= canvas.width; x += 3) {
-                    const y = baseY + 
+                for (let x = 0; x <= canvas.width; x += 5) {
+                    const y = reachY + 
                         Math.sin(x * frequency + waveTime * speed) * amplitude + 
-                        Math.cos(x * frequency * 0.5 + waveTime * speed * 0.7) * (amplitude * 0.4);
+                        Math.cos(x * frequency * 0.6 - waveTime * speed * 0.9) * (amplitude * 0.5);
                     if (x === 0) ctx.moveTo(x, y);
                     else ctx.lineTo(x, y);
                 }
                 ctx.strokeStyle = foamColor;
-                ctx.lineWidth = foamThickness || 4;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
+                ctx.lineWidth = 3;
                 ctx.stroke();
             }
-        }
-
-        // 🐚 조개/소라 그리기 함수
-        function drawShell(ctx, x, y, size, mainColor, type = 'fan', angleDeg = 0) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.rotate((angleDeg * Math.PI) / 180);
-
-            ctx.fillStyle = "rgba(100, 70, 40, 0.12)";
-            ctx.beginPath();
-            ctx.ellipse(0, size * 0.35, size * 0.95, size * 0.35, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            if (type === 'fan') {
-                ctx.fillStyle = mainColor;
-                ctx.beginPath();
-                ctx.moveTo(0, size * 0.4);
-                ctx.bezierCurveTo(-size * 1.1, -size * 0.2, -size * 0.8, -size * 0.9, 0, -size * 0.95);
-                ctx.bezierCurveTo(size * 0.8, -size * 0.9, size * 1.1, -size * 0.2, 0, size * 0.4);
-                ctx.fill();
-
-                ctx.fillStyle = "rgba(0,0,0,0.08)";
-                ctx.beginPath();
-                ctx.rect(-size * 0.35, size * 0.3, size * 0.7, size * 0.15);
-                ctx.fill();
-
-                const ridges = [-0.65, -0.35, -0.1, 0.1, 0.35, 0.65];
-                ridges.forEach(r => {
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
-                    ctx.lineWidth = Math.max(1.5, size * 0.08);
-                    ctx.lineCap = "round";
-                    ctx.beginPath();
-                    ctx.moveTo(0, size * 0.35);
-                    ctx.quadraticCurveTo(r * size * 0.5, -size * 0.3, r * size * 0.9, -size * 0.85);
-                    ctx.stroke();
-
-                    ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
-                    ctx.lineWidth = Math.max(1, size * 0.04);
-                    ctx.beginPath();
-                    ctx.moveTo(0, size * 0.35);
-                    ctx.quadraticCurveTo(r * size * 0.5 + 1.5, -size * 0.3, r * size * 0.9 + 1.5, -size * 0.85);
-                    ctx.stroke();
-                });
-
-                ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-                ctx.beginPath();
-                ctx.ellipse(0, -size * 0.4, size * 0.45, size * 0.25, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-            } else if (type === 'spiral') {
-                const circles = [
-                    { x: 0, y: size * 0.3, r: size * 0.5 },
-                    { x: 0, y: size * 0.05, r: size * 0.4 },
-                    { x: 0, y: -size * 0.18, r: size * 0.3 },
-                    { x: 0, y: -size * 0.38, r: size * 0.2 },
-                    { x: 0, y: -size * 0.55, r: size * 0.1 }
-                ];
-
-                circles.forEach((c, idx) => {
-                    ctx.fillStyle = mainColor;
-                    ctx.beginPath();
-                    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.fillStyle = "rgba(0, 0, 0, 0.07)";
-                    ctx.beginPath();
-                    ctx.arc(c.x, c.y + c.r * 0.3, c.r * 0.9, 0, Math.PI);
-                    ctx.fill();
-
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-                    ctx.beginPath();
-                    ctx.arc(c.x - c.r * 0.3, c.y - c.r * 0.2, c.r * 0.3, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-
-            } else if (type === 'clam') {
-                ctx.fillStyle = mainColor;
-                ctx.beginPath();
-                ctx.ellipse(0, 0, size * 0.85, size * 0.65, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                for (let i = 1; i <= 3; i++) {
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-                    ctx.lineWidth = Math.max(1.2, size * 0.06);
-                    ctx.beginPath();
-                    ctx.ellipse(0, size * 0.1, size * 0.22 * i, size * 0.15 * i, Math.PI, 0, Math.PI);
-                    ctx.stroke();
-                }
-
-                ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-                ctx.beginPath();
-                ctx.ellipse(-size * 0.2, -size * 0.2, size * 0.3, size * 0.15, -Math.PI / 6, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
             ctx.restore();
         }
 
-        // 🏰 모래성
-        function drawSandCastle(ctx, x, y) {
+        function drawShell(ctx, x, y, size, angle, color) {
             ctx.save();
             ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.fillStyle = color;
+            ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+            ctx.lineWidth = 1;
 
-            const sandColor = '#F2C94C';      
-            const shadowColor = '#E0B034';    
-            const roofColor = '#FF6B6B';      
-
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
             ctx.beginPath();
-            ctx.ellipse(0, 5, 42, 12, 0, 0, Math.PI * 2);
+            ctx.arc(0, 0, size, Math.PI, 0);
+            ctx.lineTo(size * 0.3, size * 0.4);
+            ctx.lineTo(-size * 0.3, size * 0.4);
+            ctx.closePath();
             ctx.fill();
-
-            ctx.fillStyle = sandColor;
-            ctx.beginPath();
-            ctx.roundRect(-26, -22, 52, 24, [4, 4, 0, 0]);
-            ctx.fill();
-
-            ctx.fillStyle = shadowColor;
-            ctx.beginPath();
-            ctx.roundRect(0, -22, 26, 24, [0, 4, 0, 0]);
-            ctx.fill();
-
-            ctx.fillStyle = sandColor;
-            ctx.beginPath();
-            ctx.roundRect(-10, -42, 20, 22, [3, 3, 0, 0]);
-            ctx.fill();
-            ctx.fillStyle = shadowColor;
-            ctx.fillRect(0, -42, 10, 22);
-
-            ctx.fillStyle = sandColor;
-            ctx.beginPath();
-            ctx.roundRect(-26, -34, 11, 14, [2, 2, 0, 0]);
-            ctx.roundRect(15, -34, 11, 14, [2, 2, 0, 0]);
-            ctx.fill();
-
-            ctx.fillStyle = roofColor;
-            ctx.beginPath();
-            ctx.moveTo(-31, -34); ctx.lineTo(-20.5, -46); ctx.lineTo(-10, -34);
-            ctx.closePath(); ctx.fill();
-
-            ctx.beginPath();
-            ctx.moveTo(10, -34); ctx.lineTo(20.5, -46); ctx.lineTo(31, -34);
-            ctx.closePath(); ctx.fill();
-
-            ctx.fillStyle = '#6E473B';
-            ctx.beginPath();
-            ctx.arc(0, 2, 7, Math.PI, 0);
-            ctx.fill();
-
-            ctx.strokeStyle = '#A87A51';
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(0, -42);
-            ctx.lineTo(0, -56);
             ctx.stroke();
 
-            ctx.fillStyle = roofColor;
             ctx.beginPath();
-            ctx.moveTo(0, -56);
-            ctx.lineTo(11, -51);
-            ctx.lineTo(0, -46);
+            for (let i = -2; i <= 2; i++) {
+                ctx.moveTo(0, size * 0.4);
+                ctx.lineTo((i / 2) * (size * 0.8), -size * 0.8);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawSandCastle(ctx, x, y, scale) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            ctx.fillStyle = '#eab308';
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.rect(-45, -20, 90, 40);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.rect(-25, -45, 50, 25);
+            ctx.fill();
+            ctx.stroke();
+
+            for (let i = -25; i < 25; i += 12.5) {
+                ctx.fillRect(i, -53, 7, 8);
+                ctx.strokeRect(i, -53, 7, 8);
+            }
+
+            ctx.beginPath();
+            ctx.rect(-50, -35, 20, 15);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillRect(-50, -41, 6, 6); ctx.strokeRect(-50, -41, 6, 6);
+            ctx.fillRect(-36, -41, 6, 6); ctx.strokeRect(-36, -41, 6, 6);
+
+            ctx.beginPath();
+            ctx.rect(30, -35, 20, 15);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillRect(30, -41, 6, 6); ctx.strokeRect(30, -41, 6, 6);
+            ctx.fillRect(44, -41, 6, 6); ctx.strokeRect(44, -41, 6, 6);
+
+            ctx.fillStyle = '#78350f';
+            ctx.beginPath();
+            ctx.arc(0, 20, 10, Math.PI, 0);
+            ctx.rect(-10, 10, 20, 10);
+            ctx.fill();
+
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, -53);
+            ctx.lineTo(0, -75);
+            ctx.stroke();
+
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(0, -75);
+            ctx.lineTo(15, -68);
+            ctx.lineTo(0, -61);
             ctx.closePath();
             ctx.fill();
 
@@ -656,16 +681,13 @@
         }
 
         class ShootingStar {
-            constructor(isInitial = false) { 
-                this.reset(isInitial); 
-            }
+            constructor(isInitial = false) { this.reset(isInitial); }
             reset(isInitial = false) {
                 this.x = Math.random() * (canvas.width * 1.2) - (canvas.width * 0.2);
                 this.y = Math.random() * -200;
                 this.length = Math.random() * 100 + 140; 
                 this.speed = Math.random() * 2 + 2; 
                 this.size = Math.random() * 1.2 + 0.8; 
-                // 접속하자마자 바로 떨어지도록 설정
                 if (isInitial) {
                     this.waitTime = 0;
                     this.active = true;
@@ -701,128 +723,58 @@
                 ctx.restore();
             }
         }
-        // 첫 화면 진입 시 즉시 떨어지도록 true 전달
         const meteors = Array.from({ length: 4 }, () => new ShootingStar(true));
 
         function animate() {
             if (document.body.classList.contains('theme-snow')) {
                 ctx.fillStyle = '#0b1120';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.beginPath();
-                ctx.moveTo(0, canvas.height);
-                ctx.lineTo(0, canvas.height - 40);
-                ctx.quadraticCurveTo(canvas.width / 4, canvas.height - 55, canvas.width / 2, canvas.height - 40);
-                ctx.quadraticCurveTo((canvas.width * 3) / 4, canvas.height - 25, canvas.width, canvas.height - 45);
-                ctx.lineTo(canvas.width, canvas.height);
-                ctx.closePath();
-                ctx.fillStyle = '#ffffff';
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-                ctx.fill();
-                ctx.shadowBlur = 0;
-
                 snowflakes.forEach(flake => {
                     flake.y += flake.speedY;
                     flake.x += flake.speedX + Math.sin(flake.y * 0.02) * 0.3;
-
-                    if (flake.y > canvas.height - 35) {
-                        flake.y = -10;
-                        flake.x = Math.random() * canvas.width;
-                    }
-                    if (flake.x > canvas.width) flake.x = 0;
-                    if (flake.x < 0) flake.x = canvas.width;
-
+                    if (flake.y > canvas.height - 35) { flake.y = -10; flake.x = Math.random() * canvas.width; }
                     ctx.beginPath();
                     ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
                     ctx.fillStyle = `rgba(255, 255, 255, ${flake.opacity})`;
-                    ctx.shadowBlur = 6;
-                    ctx.shadowColor = '#ffffff';
                     ctx.fill();
-                    ctx.shadowBlur = 0;
                 });
             } else if (document.body.classList.contains('theme-autumn')) {
                 ctx.fillStyle = '#1c0d02';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-
                 leaves.forEach(leaf => {
                     leaf.y += leaf.speedY;
                     leaf.x += leaf.speedX + Math.sin(leaf.y * 0.015);
                     leaf.angle += leaf.spin;
-
-                    if (leaf.y > canvas.height + 20) {
-                        leaf.y = -20;
-                        leaf.x = Math.random() * canvas.width;
-                    }
-                    if (leaf.x > canvas.width + 20) leaf.x = -20;
-                    if (leaf.x < -20) leaf.x = canvas.width + 20;
-
+                    if (leaf.y > canvas.height + 20) { leaf.y = -20; leaf.x = Math.random() * canvas.width; }
                     drawLeaf(ctx, leaf.x, leaf.y, leaf.size, leaf.angle, leaf.color, leaf.opacity);
                 });
             } else if (document.body.classList.contains('theme-summer')) {
-                ctx.fillStyle = '#f3e5ab';
+                ctx.fillStyle = '#fef3c7';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                waveTime += 0.03;
+                const castleX = canvas.width > 600 ? canvas.width - 120 : canvas.width - 80;
+                const castleY = canvas.height - 110;
+                const castleScale = canvas.width > 600 ? 0.9 : 0.7;
+                drawSandCastle(ctx, castleX, castleY, castleScale);
 
-                const baseHeight = canvas.height * 0.42;
-                const wavePush = Math.sin(waveTime * 0.8) * (canvas.height * 0.12);
+                drawShell(ctx, canvas.width * 0.15, canvas.height - 120, 14, -0.3, '#fbcfe8');
+                drawShell(ctx, canvas.width * 0.22, canvas.height - 80, 10, 0.4, '#fed7aa');
+                drawShell(ctx, canvas.width * 0.65, canvas.height - 100, 12, -0.6, '#ffffff');
+                drawShell(ctx, canvas.width * 0.45, canvas.height - 140, 9, 0.2, '#fbcfe8');
 
-                const sandY = canvas.height * 0.78;
-                drawSandCastle(ctx, canvas.width * 0.75, sandY);
-                
-                drawShell(ctx, canvas.width * 0.18, sandY + 15, 20, '#FF9EF1', 'fan', -15);
-                drawShell(ctx, canvas.width * 0.32, sandY + 38, 22, '#FFC076', 'spiral', 25);
-                drawShell(ctx, canvas.width * 0.88, sandY + 22, 16, '#74B9FF', 'clam', 10);
-                drawShell(ctx, canvas.width * 0.52, sandY + 42, 15, '#FFEAA7', 'fan', 5);
-                drawShell(ctx, canvas.width * 0.08, sandY + 30, 18, '#A29BFE', 'spiral', -40);
+                waveTime += 0.025;
+                const baseReach = canvas.height * 0.35;
+                const waveShift = Math.sin(waveTime * 0.6) * (canvas.height * 0.08);
 
-                const gradDeep = ctx.createLinearGradient(0, 0, 0, baseHeight + wavePush);
-                gradDeep.addColorStop(0, '#0284c7');
-                gradDeep.addColorStop(1, '#0369a1');
+                drawTopDownWaveLayer(ctx, { reachY: baseReach + waveShift * 0.4, amplitude: 18, frequency: 0.008, speed: 0.8, color: '#0284c7' });
+                drawTopDownWaveLayer(ctx, { reachY: baseReach + 50 + waveShift * 0.7, amplitude: 22, frequency: 0.01, speed: 1.1, color: '#38bdf8', foamColor: 'rgba(255, 255, 255, 0.5)' });
+                drawTopDownWaveLayer(ctx, { reachY: baseReach + 100 + waveShift, amplitude: 25, frequency: 0.012, speed: 1.4, color: 'rgba(186, 230, 253, 0.85)', foamColor: '#ffffff' });
 
-                drawWaveLayer(ctx, {
-                    baseY: baseHeight + wavePush - 25,
-                    amplitude: 18,
-                    frequency: 0.008,
-                    speed: 0.6,
-                    color: gradDeep,
-                    foamColor: 'rgba(255, 255, 255, 0.4)',
-                    foamThickness: 3
-                });
-
-                const gradMid = ctx.createLinearGradient(0, 0, 0, baseHeight + wavePush);
-                gradMid.addColorStop(0, '#38bdf8');
-                gradMid.addColorStop(1, '#0284c7');
-
-                drawWaveLayer(ctx, {
-                    baseY: baseHeight + wavePush,
-                    amplitude: 22,
-                    frequency: 0.012,
-                    speed: 1.0,
-                    color: gradMid,
-                    foamColor: 'rgba(255, 255, 255, 0.7)',
-                    foamThickness: 5
-                });
-
-                const gradShallow = ctx.createLinearGradient(0, 0, 0, baseHeight + wavePush + 20);
-                gradShallow.addColorStop(0, 'rgba(56, 189, 248, 0.85)');
-                gradShallow.addColorStop(1, 'rgba(125, 211, 252, 0.95)');
-
-                drawWaveLayer(ctx, {
-                    baseY: baseHeight + wavePush + 20,
-                    amplitude: 15,
-                    frequency: 0.015,
-                    speed: 1.4,
-                    color: gradShallow,
-                    foamColor: '#ffffff',
-                    foamThickness: 8
-                });
-
+            } else if (document.body.classList.contains('theme-custom-image')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
             } else {
                 ctx.fillStyle = '#030308';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-
                 stars.forEach(star => {
                     star.alpha += star.speed;
                     if (star.alpha > 1 || star.alpha < 0.2) star.speed = -star.speed;
@@ -831,12 +783,8 @@
                     ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
                     ctx.fill();
                 });
-                meteors.forEach(meteor => {
-                    meteor.update();
-                    meteor.draw();
-                });
+                meteors.forEach(meteor => { meteor.update(); meteor.draw(); });
             }
-
             requestAnimationFrame(animate);
         }
 
@@ -854,8 +802,8 @@
 
         let userData = { 
             name: "oo님", rank: "??위", coin: 0, point: 0, 
-            avatarUrl: null, bannerUrl: null, currentTheme: 'dark',
-            aboutMe: localStorage.getItem('user_about_me') || "여기에 자신을 소개하는 글을 작성해보세요."
+            avatarUrl: null, bannerUrl: null, currentTheme: 'dark', customThemeBgUrl: null,
+            aboutMe: localStorage.getItem('user_about_me') || "안녕하세요! 자유롭게 소통하고 즐기는 공간입니다."
         };
         
         let customDDays = JSON.parse(localStorage.getItem('user_ddays')) || [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }];
@@ -914,16 +862,36 @@
             userData.currentTheme = themeName; 
             document.body.className = '';
             document.body.style.background = '';
+            document.body.style.backgroundImage = '';
 
-            if (themeName !== 'dark') {
+            if (themeName === 'custom-image') {
+                document.body.classList.add('theme-custom-image');
+                if (userData.customThemeBgUrl) {
+                    document.body.style.backgroundImage = `url('${userData.customThemeBgUrl}')`;
+                }
+            } else if (themeName !== 'dark') {
                 document.body.classList.add('theme-' + themeName);
             } else {
                 document.body.style.background = '#030308';
             }
-
-            const activeBtn = document.querySelector('.nav-btn.active');
-            if (activeBtn && activeBtn.getAttribute('onclick').includes('menu')) loadPage('menu', activeBtn);
         }
+
+        function setCustomImageTheme(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    userData.customThemeBgUrl = ev.target.result;
+                    setTheme('custom-image');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
+        function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
+        function openCreditModal() { document.getElementById('credit-modal').style.display = 'flex'; }
+        function closeCreditModal() { document.getElementById('credit-modal').style.display = 'none'; }
 
         function loadPage(page, btn) {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -997,34 +965,20 @@
                 content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-gamepad"></i><h2>게임 센터 업데이트 예정</h2><p>주식, 도박 시뮬레이션, 낚시, 무기 강화 기능이 추가될 예정입니다.</p></div>`;
             } else if (page === 'rank') {
                 content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-trophy"></i><h2>랭킹 시스템 업데이트 예정</h2><p>준비 중입니다.</p></div>`;
-            } else if (page === 'menu') {
+            } else if (page === 'shop') {
                 content.innerHTML = `
                     <div class="card" style="text-align:left;">
-                        <h2 style="margin-top:0; font-size:18px;"><i class="fa-solid fa-palette"></i> 환경 설정 - 테마</h2>
-                        <div class="theme-options">
-                            <button class="theme-btn" onclick="setTheme('dark')"><span>🌙 다크 테마</span><div class="theme-preview" style="background:#030308;"></div></button>
-                            <button class="theme-btn" onclick="setTheme('light')"><span>☀️ 라이트 테마</span><div class="theme-preview" style="background:#ffffff;"></div></button>
-                            <button class="theme-btn" onclick="setTheme('aurora')"><span>🌌 오로라 테마</span><div class="theme-preview" style="background:#004d40;"></div></button>
-                            <button class="theme-btn" onclick="setTheme('sunset')"><span>🌅 노을 테마</span><div class="theme-preview" style="background:#ff5e36;"></div></button>
-                            <button class="theme-btn" onclick="setTheme('neon')"><span>👾 네온 테마</span><div class="theme-preview" style="background:#ff007f;"></div></button>
-                            <button class="theme-btn" onclick="setTheme('lavender')"><span>🪻 라벤더 테마</span><div class="theme-preview" style="background:#c084fc;"></div></button>
-                            <button class="theme-btn" onclick="setTheme('deepspace')"><span>🚀 딥 스페이스 테마</span><div class="theme-preview" style="background:#1e1b4b;"></div></button>
-                            <button class="theme-btn" onclick="setTheme('summer')"><span>🏖️ 여름 테마</span><div class="theme-preview" style="background:#38bdf8;"></div></button>
-                            <button class="theme-btn" onclick="setTheme('autumn')"><span>🍁 가을 테마</span><div class="theme-preview" style="background:#d97706;"></div></button>
-                            <button class="theme-btn" onclick="setTheme('snow')"><span>❄️ 겨울 테마</span><div class="theme-preview" style="background:#38bdf8;"></div></button>
+                        <h2 style="margin-top:0; font-size:18px;"><i class="fa-solid fa-store" style="color:var(--accent-color);"></i> 은하수 상점</h2>
+                        <div class="empty-shop-box">
+                            <div class="empty-icon">🎁</div>
+                            <h3 style="margin-bottom:8px; font-size:16px;">지금은 판매 중인 상품이 없습니다</h3>
+                            <p style="font-size:13px; color:var(--sub-text); line-height:1.5;">
+                                곧 멋진 아이템과 테마가 추가될 예정입니다.<br>다음 업데이트를 기대해 주세요!
+                            </p>
                         </div>
-                    </div>
-                    <div class="card" style="text-align:left;">
-                        <h2 style="margin-top:0; font-size:18px;"><i class="fa-solid fa-circle-info"></i> 정보</h2>
-                        <button class="credit-btn" onclick="openCreditModal()">
-                            <i class="fa-solid fa-award"></i> 크레딧
-                        </button>
                     </div>`;
             }
         }
-        
-        function openCreditModal() { document.getElementById('credit-modal').style.display = 'flex'; }
-        function closeCreditModal() { document.getElementById('credit-modal').style.display = 'none'; }
 
         function renderDDays() {
             const container = document.getElementById('dday-list-container');
