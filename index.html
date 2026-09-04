@@ -74,18 +74,20 @@
         }
         
         body.theme-custom-image {
-            --bg-color: transparent;
-            --card-bg: rgba(25, 25, 30, 0.75);
-            --card-border: rgba(255, 255, 255, 0.25);
-            --text-color: #ffffff;
-            --sub-text: #9ca3af;
-            --nav-bg: rgba(20, 20, 25, 0.9);
-            --accent-color: #6c757d;
-            --nav-active-color: #9ca3af;
-            background-size: cover !important;
-            background-position: center !important;
-            background-repeat: no-repeat !important;
-            background-attachment: fixed !important;
+    --bg-color: transparent;
+    --card-bg: rgba(255, 255, 255, 0.15);       /* 카드 배경: 투명한 하얀색 */
+    --card-border: rgba(255, 255, 255, 0.3);   /* 테두리: 하얀색 */
+    --text-color: #ffffff;                     /* 글자 색: 어두운색 */
+    --sub-text: #ffffff;                       /* 보조 글자 색 */
+    --nav-bg: rgba(255, 255, 255, 0.55);        /* 상단/하단 바: 하얀색 */
+    --accent-color: #f379f;                   /* 포인트 색상 */
+    --nav-active-color: #0284c7;               /* 활성화된 메뉴 색상 */
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+}
+
         }
 
         body {
@@ -339,8 +341,10 @@
 </head>
 <body>
 
+    <!-- 배경 Canvas -->
     <canvas id="space-canvas"></canvas>
 
+    <!-- 인트로 스크린 -->
     <div id="intro-screen">
         <div class="intro-container" id="intro">
             <div class="sub-title">언제든지 놀러오세요!</div>
@@ -351,6 +355,7 @@
         </div>
     </div>
 
+    <!-- 메인 메인 앱 -->
     <div id="main-app">
         <div class="top-navbar">
             <div class="money-badge">
@@ -366,6 +371,7 @@
         <input type="file" id="banner-input" accept="image/*" style="display: none;" onchange="changeBanner(event)">
         <input type="file" id="theme-image-input" accept="image/*" style="display: none;" onchange="setCustomImageTheme(event)">
 
+        <!-- 닉네임 변경 모달 -->
         <div id="modal" class="modal-overlay">
             <div class="modal-box">
                 <h3>닉네임 변경</h3>
@@ -377,6 +383,7 @@
             </div>
         </div>
 
+        <!-- 자기소개 수정 모달 -->
         <div id="about-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3>자기소개 수정</h3>
@@ -388,6 +395,7 @@
             </div>
         </div>
 
+        <!-- 기념일 추가/수정 모달 -->
         <div id="dday-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3 id="dday-modal-title">기념일 추가</h3>
@@ -400,6 +408,7 @@
             </div>
         </div>
 
+        <!-- 기념일 삭제 확인 모달 -->
         <div id="delete-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3>기념일 삭제</h3>
@@ -411,6 +420,7 @@
             </div>
         </div>
 
+        <!-- 프로필 크롭 모달 -->
         <div id="crop-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3>프로필 영역 조절</h3>
@@ -432,7 +442,7 @@
                 
                 <h4 style="font-size:14px; margin-top:10px; color:var(--sub-text);"><i class="fa-solid fa-palette"></i> 테마 선택</h4>
                 <div class="theme-options">
-                    <button class="theme-btn" onclick="document.getElementById('theme-image-input').click()" style="border: 1px dashed var(--accent-color);"><span>🖼️ 커스텀 이미지 (업로드)</span><div class="theme-preview" style="background:#6c757d; display:flex; align-items:center; justify-content:center; font-size:10px;">📷</div></button>
+                    <button class="theme-btn" onclick="document.getElementById('theme-image-input').click()" style="border: 1px dashed var(--accent-color);"><span>🖼️ 커스텀 이미지 (업로드)</span><div class="theme-preview" style="background:#ffffff; display:flex; align-items:center; justify-content:center; font-size:10px;">📷</div></button>
                     <button class="theme-btn" onclick="setTheme('dark')"><span>🌙 다크 테마</span><div class="theme-preview" style="background:#030308;"></div></button>
                     <button class="theme-btn" onclick="setTheme('light')"><span>☀️ 라이트 테마</span><div class="theme-preview" style="background:#ffffff;"></div></button>
                     <button class="theme-btn" onclick="setTheme('aurora')"><span>🌌 오로라 테마</span><div class="theme-preview" style="background:#004d40;"></div></button>
@@ -456,6 +466,7 @@
             </div>
         </div>
 
+        <!-- 크레딧 모달 -->
         <div id="credit-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3><i class="fa-solid fa-circle-info" style="color:var(--accent-color);"></i> 만들게 된 이유</h3>
@@ -470,7 +481,7 @@
                     </div>
                     <div class="credit-item">
                         <span class="credit-label">💡 제작 의도</span>
-                        <div>처음 사이트를 만들기 시작할 때 의도가 사람들과 함께 편안하고 자유롭게 놀 수 있는 공간을 제공하는 것이었습니다.</div>
+                        <div>사람들과 함께 편안하고 자유롭게 놀 수 있는 공간을 제공하는 것</div>
                     </div>
                 </div>
                 <div class="modal-btns" style="margin-top:15px;">
@@ -479,8 +490,10 @@
             </div>
         </div>
 
+        <!-- 동적 메인 콘텐트 출력 영역 -->
         <div id="content"></div>
 
+        <!-- 하단 네비게이션 바 -->
         <nav class="bottom-nav">
             <button class="nav-btn active" onclick="loadPage('profile', this)"><i class="fa-solid fa-user"></i><span>프로필</span></button>
             <button class="nav-btn" onclick="loadPage('study', this)"><i class="fa-solid fa-graduation-cap"></i><span>학습</span></button>
@@ -502,6 +515,7 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
+        // 별 생성 데이터
         const stars = [];
         for (let i = 0; i < 150; i++) {
             stars.push({
@@ -513,6 +527,7 @@
             });
         }
 
+        // 눈송이 생성 데이터
         const snowflakes = [];
         for (let i = 0; i < 180; i++) {
             snowflakes.push({
@@ -525,6 +540,7 @@
             });
         }
 
+        // 단풍잎 생성 데이터
         const leaves = [];
         const leafColors = ['#d97706', '#dc2626', '#b45309', '#f59e0b', '#9a3412'];
         for (let i = 0; i < 45; i++) {
@@ -725,6 +741,7 @@
         }
         const meteors = Array.from({ length: 4 }, () => new ShootingStar(true));
 
+        // 배경 애니메이션 렌더링 루프
         function animate() {
             if (document.body.classList.contains('theme-snow')) {
                 ctx.fillStyle = '#0b1120';
@@ -790,6 +807,7 @@
 
         animate();
 
+        // 메인 앱 시작
         function startApp() {
             document.getElementById('intro-screen').classList.add('fade-out');
             setTimeout(() => {
@@ -800,10 +818,11 @@
             }, 800);
         }
 
+        // 사용자 기본 데이터 상태 객체
         let userData = { 
             name: "oo님", rank: "??위", coin: 0, point: 0, 
             avatarUrl: null, bannerUrl: null, currentTheme: 'dark', customThemeBgUrl: null,
-            aboutMe: localStorage.getItem('user_about_me') || "안녕하세요! 자유롭게 소통하고 즐기는 공간입니다."
+            aboutMe: localStorage.getItem('user_about_me') || "자기소개를 적어보세요!"
         };
         
         let customDDays = JSON.parse(localStorage.getItem('user_ddays')) || [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }];
@@ -822,6 +841,7 @@
             return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
         }
 
+        // 이미지 크롭 인터랙션 제어 변수
         let imgScale = 1, imgPosX = 0, imgPosY = 0, isDragging = false, startX = 0, startY = 0, rawImgObj = new Image();
 
         function updateCropTransform() {
@@ -858,6 +878,7 @@
             window.addEventListener('touchend', stopDrag);
         }
 
+        // 테마 적용 함수
         function setTheme(themeName) {
             userData.currentTheme = themeName; 
             document.body.className = '';
@@ -893,6 +914,7 @@
         function openCreditModal() { document.getElementById('credit-modal').style.display = 'flex'; }
         function closeCreditModal() { document.getElementById('credit-modal').style.display = 'none'; }
 
+        // 하단 메뉴 페이지 전환 함수
         function loadPage(page, btn) {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             if(btn) btn.classList.add('active');
@@ -999,6 +1021,7 @@
             `).join('');
         }
 
+        // 모달 및 데이터 핸들링 함수군
         function openModal() { document.getElementById('name-input').value = userData.name; document.getElementById('modal').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
         function saveName() { userData.name = document.getElementById('name-input').value.trim(); closeModal(); loadPage('profile', document.querySelector('.nav-btn.active')); }
