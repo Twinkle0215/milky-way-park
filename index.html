@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Milky Way Park</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -74,37 +74,43 @@
         }
         
         body.theme-custom-image {
-    --bg-color: transparent;
-    --card-bg: rgba(255, 255, 255, 0.15);       /* 카드 배경: 투명한 하얀색 */
-    --card-border: rgba(255, 255, 255, 0.3);   /* 테두리: 하얀색 */
-    --text-color: #ffffff;                     /* 글자 색: 어두운색 */
-    --sub-text: #ffffff;                       /* 보조 글자 색 */
-    --nav-bg: rgba(255, 255, 255, 0.55);        /* 상단/하단 바: 하얀색 */
-    --accent-color: #f379f;                   /* 포인트 색상 */
-    --nav-active-color: #0284c7;               /* 활성화된 메뉴 색상 */
-    background-size: cover !important;
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-    background-attachment: fixed !important;
-}
+            --bg-color: transparent;
+            --card-bg: rgba(255, 255, 255, 0.15);
+            --card-border: rgba(255, 255, 255, 0.3);
+            --text-color: #ffffff;
+            --sub-text: #ffffff;
+            --nav-bg: rgba(255, 255, 255, 0.55);
+            --accent-color: #f379f;
+            --nav-active-color: #0284c7;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            background-attachment: fixed !important;
+        }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+            min-height: 100dvh;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
         }
 
         body {
-            width: 100vw;
-            min-height: 100dvh;
             background: #030308;
-            overflow-x: hidden;
             font-family: 'Noto Sans KR', sans-serif;
             color: #ffffff;
+            display: flex;
+            flex-direction: column;
         }
 
         #space-canvas {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100dvh;
             z-index: 1;
             pointer-events: none;
         }
@@ -113,8 +119,8 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100dvh;
             z-index: 9999;
             display: flex;
             justify-content: center;
@@ -128,6 +134,8 @@
             z-index: 10;
             text-align: center;
             padding: 0 20px;
+            width: 100%;
+            max-width: 600px;
         }
 
         .sub-title { font-size: 0.9rem; font-weight: 300; color: #cbd5e1; margin-bottom: 6px; letter-spacing: 3px; }
@@ -178,6 +186,7 @@
             padding-top: 55px;
             padding-bottom: 80px;
             transition: background 0.3s ease, color 0.3s ease;
+            flex: 1;
         }
 
         .top-navbar { 
@@ -224,7 +233,7 @@
         }
         .settings-icon-btn:hover { background: rgba(255, 255, 255, 0.1); transform: rotate(30deg); }
 
-        #content { padding: 15px; }
+        #content { padding: 15px; width: 100%; max-width: 800px; margin: 0 auto; }
         .card { background: var(--card-bg); border-radius: 14px; padding: 18px; margin-bottom: 12px; border: 1px solid var(--card-border); box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; position: relative; backdrop-filter: blur(10px); }
         .profile-card { padding: 0 !important; }
         .banner-container { width: 100%; height: 110px; background: linear-gradient(135deg, #2e7d32, #1b5e20); position: relative; background-size: cover; background-position: center; }
@@ -332,7 +341,7 @@
         .credit-item { margin-bottom: 12px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); }
         .credit-label { font-weight: bold; color: var(--accent-color); margin-bottom: 4px; display: block; font-size: 12px; }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--card-border); box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--card-border); box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
         .nav-btn { background: none; border: none; color: var(--sub-text); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex: 1; height: 100%; transition: color 0.2s ease; }
         .nav-btn i { font-size: 20px; display: block; }
         .nav-btn span { font-size: 10px; margin-top: 4px; font-weight: 500; display: block; }
@@ -355,7 +364,7 @@
         </div>
     </div>
 
-    <!-- 메인 메인 앱 -->
+    <!-- 메인 앱 -->
     <div id="main-app">
         <div class="top-navbar">
             <div class="money-badge">
@@ -514,6 +523,9 @@
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(resizeCanvas, 200);
+        });
 
         // 별 생성 데이터
         const stars = [];
@@ -815,6 +827,7 @@
                 document.getElementById('main-app').style.display = 'block';
                 setTheme('dark');
                 loadPage('profile', document.querySelector('.nav-btn.active'));
+                resizeCanvas();
             }, 800);
         }
 
@@ -1102,7 +1115,7 @@
         }
         function changeBanner(e) { const f = e.target.files[0]; if(f) { const r = new FileReader(); r.onload = (ev) => { userData.bannerUrl = ev.target.result; loadPage('profile', document.querySelector('.nav-btn.active')); }; r.readAsDataURL(f); } }
         
-        window.onload = () => { initCropEvents(); };
+        window.onload = () => { initCropEvents(); resizeCanvas(); };
     </script>
 </body>
 </html>
