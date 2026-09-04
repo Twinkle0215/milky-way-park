@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Milky Way Park</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,16 +25,6 @@
             --nav-bg: #1e1e1e;
             --accent-color: #4CAF50;
             --nav-active-color: #4CAF50;
-            --app-max-width: 800px;
-        }
-
-        /* 디바이스 유형별 스타일 대응 (모바일 / PC) */
-        body.device-mobile {
-            --app-max-width: 100%;
-        }
-
-        body.device-pc {
-            --app-max-width: 1000px;
         }
 
         body.theme-light { --bg-color: #f5f5f7; --card-bg: #ffffff; --card-border: #e0e0e0; --text-color: #1d1d1f; --sub-text: #6e6e73; --nav-bg: #ffffff; --accent-color: #2e7d32; --nav-active-color: #2e7d32; }
@@ -84,43 +74,37 @@
         }
         
         body.theme-custom-image {
-            --bg-color: transparent;
-            --card-bg: rgba(255, 255, 255, 0.15);
-            --card-border: rgba(255, 255, 255, 0.3);
-            --text-color: #ffffff;
-            --sub-text: #ffffff;
-            --nav-bg: rgba(255, 255, 255, 0.55);
-            --accent-color: #f379f;
-            --nav-active-color: #0284c7;
-            background-size: cover !important;
-            background-position: center !important;
-            background-repeat: no-repeat !important;
-            background-attachment: fixed !important;
-        }
+    --bg-color: transparent;
+    --card-bg: rgba(255, 255, 255, 0.15);       /* 카드 배경: 투명한 하얀색 */
+    --card-border: rgba(255, 255, 255, 0.3);   /* 테두리: 하얀색 */
+    --text-color: #ffffff;                     /* 글자 색: 어두운색 */
+    --sub-text: #ffffff;                       /* 보조 글자 색 */
+    --nav-bg: rgba(255, 255, 255, 0.55);        /* 상단/하단 바: 하얀색 */
+    --accent-color: #f379f;                   /* 포인트 색상 */
+    --nav-active-color: #0284c7;               /* 활성화된 메뉴 색상 */
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+}
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            min-height: 100dvh;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
         }
 
         body {
+            width: 100vw;
+            min-height: 100dvh;
             background: #030308;
+            overflow-x: hidden;
             font-family: 'Noto Sans KR', sans-serif;
             color: #ffffff;
-            display: flex;
-            flex-direction: column;
         }
 
         #space-canvas {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100dvh;
+            width: 100%;
+            height: 100%;
             z-index: 1;
             pointer-events: none;
         }
@@ -129,8 +113,8 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100dvh;
+            width: 100%;
+            height: 100%;
             z-index: 9999;
             display: flex;
             justify-content: center;
@@ -144,8 +128,6 @@
             z-index: 10;
             text-align: center;
             padding: 0 20px;
-            width: 100%;
-            max-width: 600px;
         }
 
         .sub-title { font-size: 0.9rem; font-weight: 300; color: #cbd5e1; margin-bottom: 6px; letter-spacing: 3px; }
@@ -196,7 +178,6 @@
             padding-top: 55px;
             padding-bottom: 80px;
             transition: background 0.3s ease, color 0.3s ease;
-            flex: 1;
         }
 
         .top-navbar { 
@@ -243,24 +224,7 @@
         }
         .settings-icon-btn:hover { background: rgba(255, 255, 255, 0.1); transform: rotate(30deg); }
 
-        #content { 
-            padding: 15px; 
-            width: 100%; 
-            max-width: var(--app-max-width); 
-            margin: 0 auto; 
-            transition: max-width 0.3s ease;
-        }
-        
-        /* PC 환경 최적화 관련 레이아웃 */
-        body.device-pc .profile-pc-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        body.device-pc .banner-container {
-            height: 150px;
-        }
-
+        #content { padding: 15px; }
         .card { background: var(--card-bg); border-radius: 14px; padding: 18px; margin-bottom: 12px; border: 1px solid var(--card-border); box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; position: relative; backdrop-filter: blur(10px); }
         .profile-card { padding: 0 !important; }
         .banner-container { width: 100%; height: 110px; background: linear-gradient(135deg, #2e7d32, #1b5e20); position: relative; background-size: cover; background-position: center; }
@@ -327,7 +291,7 @@
         }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: 2000; }
-        .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; width: 85%; max-width: 380px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); color: var(--text-color); backdrop-filter: blur(15px); max-height: 85vh; overflow-y: auto; }
+        .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; width: 85%; max-width: 360px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); color: var(--text-color); backdrop-filter: blur(15px); max-height: 85vh; overflow-y: auto; }
         .modal-box h3 { margin-top: 0; font-size: 18px; margin-bottom: 12px; }
         .modal-box p { font-size: 14px; color: var(--sub-text); margin-top: 0; margin-bottom: 20px; line-height: 1.4; }
         .modal-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); color: var(--text-color); font-size: 14px; margin-bottom: 15px; text-align: left; resize: none; font-family: inherit; }
@@ -341,12 +305,7 @@
         .crop-image { position: absolute; top: 50%; left: 50%; transform-origin: center center; pointer-events: none; user-select: none; max-width: none; }
         .zoom-slider { width: 80%; margin-bottom: 15px; accent-color: var(--accent-color); cursor: pointer; }
         
-        /* 기기 및 테마 옵션 전용 스타일 */
-        .device-selector { display: flex; gap: 10px; margin-top: 8px; margin-bottom: 15px; }
-        .device-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.1); color: var(--text-color); font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; }
-        .device-btn.active { border-color: var(--accent-color); background: var(--accent-color); color: #fff; }
-
-        .theme-options { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 200px; overflow-y: auto; padding-right: 4px; }
+        .theme-options { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 240px; overflow-y: auto; padding-right: 4px; }
         .theme-btn { padding: 12px; border-radius: 10px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.1); color: var(--text-color); font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
         .theme-preview { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); }
         
@@ -373,7 +332,7 @@
         .credit-item { margin-bottom: 12px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); }
         .credit-label { font-weight: bold; color: var(--accent-color); margin-bottom: 4px; display: block; font-size: 12px; }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--card-border); box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--card-border); box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; }
         .nav-btn { background: none; border: none; color: var(--sub-text); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex: 1; height: 100%; transition: color 0.2s ease; }
         .nav-btn i { font-size: 20px; display: block; }
         .nav-btn span { font-size: 10px; margin-top: 4px; font-weight: 500; display: block; }
@@ -396,7 +355,7 @@
         </div>
     </div>
 
-    <!-- 메인 앱 -->
+    <!-- 메인 메인 앱 -->
     <div id="main-app">
         <div class="top-navbar">
             <div class="money-badge">
@@ -476,22 +435,12 @@
             </div>
         </div>
 
-        <!-- 설정 모달 (기기 선택, 테마 및 크레딧) -->
+        <!-- 설정 모달 (테마 및 크레딧) -->
         <div id="settings-modal" class="modal-overlay">
             <div class="modal-box" style="text-align:left;">
                 <h3 style="text-align:center;"><i class="fa-solid fa-gear" style="color:var(--accent-color);"></i> 환경 설정</h3>
                 
-                <h4 style="font-size:14px; margin-top:10px; color:var(--sub-text);"><i class="fa-solid fa-display"></i> 디바이스 환경 선택</h4>
-                <div class="device-selector">
-                    <button class="device-btn" id="btn-device-mobile" onclick="setDeviceMode('mobile')">
-                        <i class="fa-solid fa-mobile-screen-button"></i> 모바일 최적화
-                    </button>
-                    <button class="device-btn" id="btn-device-pc" onclick="setDeviceMode('pc')">
-                        <i class="fa-solid fa-desktop"></i> 컴퓨터(PC) 최적화
-                    </button>
-                </div>
-
-                <h4 style="font-size:14px; margin-top:15px; color:var(--sub-text);"><i class="fa-solid fa-palette"></i> 테마 선택</h4>
+                <h4 style="font-size:14px; margin-top:10px; color:var(--sub-text);"><i class="fa-solid fa-palette"></i> 테마 선택</h4>
                 <div class="theme-options">
                     <button class="theme-btn" onclick="document.getElementById('theme-image-input').click()" style="border: 1px dashed var(--accent-color);"><span>🖼️ 커스텀 이미지 (업로드)</span><div class="theme-preview" style="background:#ffffff; display:flex; align-items:center; justify-content:center; font-size:10px;">📷</div></button>
                     <button class="theme-btn" onclick="setTheme('dark')"><span>🌙 다크 테마</span><div class="theme-preview" style="background:#030308;"></div></button>
@@ -565,9 +514,6 @@
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
-        window.addEventListener('orientationchange', () => {
-            setTimeout(resizeCanvas, 200);
-        });
 
         // 별 생성 데이터
         const stars = [];
@@ -868,13 +814,7 @@
                 document.body.style.overflow = 'auto';
                 document.getElementById('main-app').style.display = 'block';
                 setTheme('dark');
-                
-                // 디바이스 기본값 설정 (화면 너비 감지)
-                const defaultDevice = window.innerWidth > 768 ? 'pc' : 'mobile';
-                setDeviceMode(localStorage.getItem('user_device_mode') || defaultDevice);
-                
                 loadPage('profile', document.querySelector('.nav-btn.active'));
-                resizeCanvas();
             }, 800);
         }
 
@@ -882,36 +822,11 @@
         let userData = { 
             name: "oo님", rank: "??위", coin: 0, point: 0, 
             avatarUrl: null, bannerUrl: null, currentTheme: 'dark', customThemeBgUrl: null,
-            deviceMode: 'mobile',
             aboutMe: localStorage.getItem('user_about_me') || "자기소개를 적어보세요!"
         };
         
         let customDDays = JSON.parse(localStorage.getItem('user_ddays')) || [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }];
         let editingDDayId = null, deletingDDayId = null;
-
-        // 디바이스 모드 전환 함수
-        function setDeviceMode(mode) {
-            userData.deviceMode = mode;
-            localStorage.setItem('user_device_mode', mode);
-
-            document.body.classList.remove('device-mobile', 'device-pc');
-            document.body.classList.add(`device-${mode}`);
-
-            const btnMobile = document.getElementById('btn-device-mobile');
-            const btnPc = document.getElementById('btn-device-pc');
-
-            if (btnMobile && btnPc) {
-                btnMobile.classList.toggle('active', mode === 'mobile');
-                btnPc.classList.toggle('active', mode === 'pc');
-            }
-
-            // 현재 보고 있는 페이지 다시 로드하여 비율 갱신
-            const activeBtn = document.querySelector('.nav-btn.active');
-            if (activeBtn) {
-                const currentPage = activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
-                loadPage(currentPage, activeBtn);
-            }
-        }
 
         function updateTopMoney() {
             const coinDisplay = document.getElementById('top-coin-display');
@@ -966,7 +881,7 @@
         // 테마 적용 함수
         function setTheme(themeName) {
             userData.currentTheme = themeName; 
-            document.body.className = document.body.className.replace(/theme-\S+/g, '').trim();
+            document.body.className = '';
             document.body.style.background = '';
             document.body.style.backgroundImage = '';
 
@@ -994,10 +909,7 @@
             }
         }
 
-        function openSettingsModal() { 
-            document.getElementById('settings-modal').style.display = 'flex'; 
-            setDeviceMode(userData.deviceMode);
-        }
+        function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
         function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
         function openCreditModal() { document.getElementById('credit-modal').style.display = 'flex'; }
         function closeCreditModal() { document.getElementById('credit-modal').style.display = 'none'; }
@@ -1012,8 +924,7 @@
             if (page === 'profile') {
                 const bannerStyle = userData.bannerUrl ? `background-image: url('${userData.bannerUrl}');` : '';
                 const avatarHTML = userData.avatarUrl ? `<img src="${userData.avatarUrl}" class="avatar">` : `<div class="avatar"><i class="fa-solid fa-user"></i></div>`;
-                
-                const profileCardHTML = `
+                content.innerHTML = `
                     <div class="card profile-card">
                         <div class="banner-container" style="${bannerStyle}">
                             <button class="edit-banner-btn" onclick="document.getElementById('banner-input').click()"><i class="fa-solid fa-pen"></i></button>
@@ -1035,9 +946,7 @@
                                 <div class="about-me-content">${userData.aboutMe}</div>
                             </div>
                         </div>
-                    </div>`;
-
-                const statsCardHTML = `
+                    </div>
                     <div class="card">
                         <h3 style="margin-top:0; font-size:16px;"><i class="fa-solid fa-wallet" style="color:var(--accent-color);"></i> 내 자산 & 스탯</h3>
                         <div class="stats-grid">
@@ -1045,13 +954,6 @@
                             <div class="stat-item"><div class="stat-title">랭크 포인트</div><div class="stat-value" style="color:#42a5f5;">${userData.point} P</div></div>
                         </div>
                     </div>`;
-
-                if (userData.deviceMode === 'pc') {
-                    content.innerHTML = `<div class="profile-pc-wrapper">${profileCardHTML}${statsCardHTML}</div>`;
-                } else {
-                    content.innerHTML = `${profileCardHTML}${statsCardHTML}`;
-                }
-
             } else if (page === 'study') {
                 content.innerHTML = `
                     <div class="card" style="text-align:left;">
@@ -1200,7 +1102,7 @@
         }
         function changeBanner(e) { const f = e.target.files[0]; if(f) { const r = new FileReader(); r.onload = (ev) => { userData.bannerUrl = ev.target.result; loadPage('profile', document.querySelector('.nav-btn.active')); }; r.readAsDataURL(f); } }
         
-        window.onload = () => { initCropEvents(); resizeCanvas(); };
+        window.onload = () => { initCropEvents(); };
     </script>
 </body>
 </html>
