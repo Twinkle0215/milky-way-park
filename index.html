@@ -74,20 +74,18 @@
         }
         
         body.theme-custom-image {
-    --bg-color: transparent;
-    --card-bg: rgba(255, 255, 255, 0.15);       /* 카드 배경: 투명한 하얀색 */
-    --card-border: rgba(255, 255, 255, 0.3);   /* 테두리: 하얀색 */
-    --text-color: #ffffff;                     /* 글자 색: 어두운색 */
-    --sub-text: #ffffff;                       /* 보조 글자 색 */
-    --nav-bg: rgba(255, 255, 255, 0.55);        /* 상단/하단 바: 하얀색 */
-    --accent-color: #f379f;                   /* 포인트 색상 */
-    --nav-active-color: #0284c7;               /* 활성화된 메뉴 색상 */
-    background-size: cover !important;
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-    background-attachment: fixed !important;
-}
-
+            --bg-color: transparent;
+            --card-bg: rgba(255, 255, 255, 0.15);
+            --card-border: rgba(255, 255, 255, 0.3);
+            --text-color: #ffffff;
+            --sub-text: #ffffff;
+            --nav-bg: rgba(255, 255, 255, 0.55);
+            --accent-color: #f379f;
+            --nav-active-color: #0284c7;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            background-attachment: fixed !important;
         }
 
         body {
@@ -227,8 +225,8 @@
         #content { padding: 15px; }
         .card { background: var(--card-bg); border-radius: 14px; padding: 18px; margin-bottom: 12px; border: 1px solid var(--card-border); box-shadow: 0 4px 10px rgba(0,0,0,0.15); overflow: hidden; position: relative; backdrop-filter: blur(10px); }
         .profile-card { padding: 0 !important; }
-        .banner-container { width: 100%; height: 110px; background: linear-gradient(135deg, #2e7d32, #1b5e20); position: relative; background-size: cover; background-position: center; }
-        .edit-banner-btn { position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.6); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .banner-container { width: 100%; height: 110px; background: linear-gradient(135deg, #2e7d32, #1b5e20); position: relative; background-size: cover; background-position: center; overflow: hidden; }
+        .edit-banner-btn { position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.6); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; z-index: 5; }
         .profile-body { padding: 15px 18px 18px 18px; text-align: left; }
         .avatar-wrapper { position: relative; width: 70px; height: 70px; margin-top: -45px; margin-bottom: 10px; }
         .avatar { width: 100%; height: 100%; border-radius: 50%; background: #262626; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #fff; border: 3px solid var(--card-bg); overflow: hidden; object-fit: cover; }
@@ -303,6 +301,10 @@
         
         .crop-container { width: 180px; height: 180px; border-radius: 50%; margin: 0 auto 15px auto; overflow: hidden; position: relative; border: 3px solid var(--accent-color); cursor: grab; background: #000; touch-action: none; }
         .crop-image { position: absolute; top: 50%; left: 50%; transform-origin: center center; pointer-events: none; user-select: none; max-width: none; }
+        
+        /* 배너 크롭퍼 스타일 (가로형) */
+        .banner-crop-container { width: 100%; height: 110px; min-height: 110px; border-radius: 10px; margin: 0 auto 15px auto; overflow: hidden; position: relative; border: 2px solid var(--accent-color); cursor: grab; background: #000; touch-action: none; }
+        
         .zoom-slider { width: 80%; margin-bottom: 15px; accent-color: var(--accent-color); cursor: pointer; }
         
         .theme-options { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 240px; overflow-y: auto; padding-right: 4px; }
@@ -341,10 +343,13 @@
 </head>
 <body>
 
-    <!-- 배경 Canvas -->
     <canvas id="space-canvas"></canvas>
 
-    <!-- 인트로 스크린 -->
+    <!-- 배경음악용 유튜브 플레이어 (화면에 보이지 않음) -->
+    <div id="yt-player-container" style="position:fixed; top:0; left:0; width:0; height:0; overflow:hidden;">
+        <div id="yt-player"></div>
+    </div>
+
     <div id="intro-screen">
         <div class="intro-container" id="intro">
             <div class="sub-title">언제든지 놀러오세요!</div>
@@ -355,23 +360,24 @@
         </div>
     </div>
 
-    <!-- 메인 메인 앱 -->
     <div id="main-app">
         <div class="top-navbar">
             <div class="money-badge">
                 <i class="fa-solid fa-coins"></i>
                 <span id="top-coin-display">0원</span>
             </div>
+            <button class="settings-icon-btn" onclick="toggleMute()" title="배경음악 켜기/끄기">
+                <i class="fa-solid fa-volume-high" id="mute-btn-icon"></i>
+            </button>
             <button class="settings-icon-btn" onclick="openSettingsModal()" title="설정">
                 <i class="fa-solid fa-gear"></i>
             </button>
         </div>
 
         <input type="file" id="avatar-input" accept="image/*" style="display: none;" onchange="onAvatarSelected(event)">
-        <input type="file" id="banner-input" accept="image/*" style="display: none;" onchange="changeBanner(event)">
+        <input type="file" id="banner-input" accept="image/*" style="display: none;" onchange="onBannerSelected(event)">
         <input type="file" id="theme-image-input" accept="image/*" style="display: none;" onchange="setCustomImageTheme(event)">
 
-        <!-- 닉네임 변경 모달 -->
         <div id="modal" class="modal-overlay">
             <div class="modal-box">
                 <h3>닉네임 변경</h3>
@@ -383,7 +389,6 @@
             </div>
         </div>
 
-        <!-- 자기소개 수정 모달 -->
         <div id="about-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3>자기소개 수정</h3>
@@ -395,7 +400,6 @@
             </div>
         </div>
 
-        <!-- 기념일 추가/수정 모달 -->
         <div id="dday-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3 id="dday-modal-title">기념일 추가</h3>
@@ -408,7 +412,6 @@
             </div>
         </div>
 
-        <!-- 기념일 삭제 확인 모달 -->
         <div id="delete-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3>기념일 삭제</h3>
@@ -420,7 +423,6 @@
             </div>
         </div>
 
-        <!-- 프로필 크롭 모달 -->
         <div id="crop-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3>프로필 영역 조절</h3>
@@ -435,7 +437,20 @@
             </div>
         </div>
 
-        <!-- 설정 모달 (테마 및 크레딧) -->
+        <div id="banner-crop-modal" class="modal-overlay">
+            <div class="modal-box" style="max-width: 400px;">
+                <h3>배너 영역 조절</h3>
+                <div class="banner-crop-container" id="banner-crop-area">
+                    <img id="banner-crop-img" class="crop-image" src="" alt="banner preview">
+                </div>
+                <input type="range" id="banner-zoom-range" class="zoom-slider" min="1" max="3" step="0.05" value="1" oninput="updateBannerCropTransform()">
+                <div class="modal-btns">
+                    <button class="modal-btn btn-cancel" onclick="closeBannerCropModal()">취소</button>
+                    <button class="modal-btn btn-confirm" onclick="saveCroppedBanner()">적용</button>
+                </div>
+            </div>
+        </div>
+
         <div id="settings-modal" class="modal-overlay">
             <div class="modal-box" style="text-align:left;">
                 <h3 style="text-align:center;"><i class="fa-solid fa-gear" style="color:var(--accent-color);"></i> 환경 설정</h3>
@@ -466,7 +481,6 @@
             </div>
         </div>
 
-        <!-- 크레딧 모달 -->
         <div id="credit-modal" class="modal-overlay">
             <div class="modal-box">
                 <h3><i class="fa-solid fa-circle-info" style="color:var(--accent-color);"></i> 만들게 된 이유</h3>
@@ -490,10 +504,8 @@
             </div>
         </div>
 
-        <!-- 동적 메인 콘텐트 출력 영역 -->
         <div id="content"></div>
 
-        <!-- 하단 네비게이션 바 -->
         <nav class="bottom-nav">
             <button class="nav-btn active" onclick="loadPage('profile', this)"><i class="fa-solid fa-user"></i><span>프로필</span></button>
             <button class="nav-btn" onclick="loadPage('study', this)"><i class="fa-solid fa-graduation-cap"></i><span>학습</span></button>
@@ -503,6 +515,92 @@
             <button class="nav-btn" onclick="loadPage('shop', this)"><i class="fa-solid fa-store"></i><span>상점</span></button>
         </nav>
     </div>
+
+    <!-- 유튜브 IFrame API 로드 -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        // ===== 배경음악 (유튜브 쇼츠) 설정 =====
+        const BGM_VIDEO_ID = 'BccJP9c4RpM'; // https://youtube.com/shorts/BccJP9c4RpM
+        let ytPlayer = null;
+        let ytReady = false;
+
+        function onYouTubeIframeAPIReady() {
+            ytPlayer = new YT.Player('yt-player', {
+                height: '0',
+                width: '0',
+                videoId: BGM_VIDEO_ID,
+                playerVars: {
+                    autoplay: 0,
+                    controls: 0,
+                    loop: 1,
+                    playlist: BGM_VIDEO_ID, // loop:1 이 작동하려면 playlist에 같은 영상 ID 필요
+                    disablekb: 1,
+                    fs: 0,
+                    modestbranding: 1,
+                    playsinline: 1
+                },
+                events: {
+                    'onReady': function() {
+                        ytReady = true;
+                        updateMuteIcon();
+                    },
+                    'onStateChange': function(event) {
+                        // 혹시 loop가 안 먹는 경우를 대비한 안전장치
+                        if (event.data === YT.PlayerState.ENDED) {
+                            ytPlayer.playVideo();
+                        }
+                    },
+                    'onError': function(event) {
+                        // 2: 잘못된 파라미터, 5: HTML5 플레이어 오류, 100: 영상 삭제/비공개,
+                        // 101/150: 업로더가 다른 사이트 embed(퍼가기)를 막아놓은 경우
+                        console.error('YouTube 재생 오류 코드:', event.data);
+                        if (event.data === 101 || event.data === 150) {
+                            alert('이 영상은 업로더가 다른 사이트에서 재생(embed)하는 것을 막아놓아서 배경음악으로 쓸 수 없어요. 다른 영상 링크가 필요합니다.');
+                        } else {
+                            alert('배경음악 재생 중 오류가 발생했어요. (에러 코드: ' + event.data + ')');
+                        }
+                    }
+                }
+            });
+        }
+
+        function playBGM() {
+            if (ytReady && ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                // 일부 모바일 웹뷰는 '무음 상태의 자동재생'만 허용하기 때문에,
+                // 먼저 무음으로 재생을 시작한 뒤 곧바로 소리를 켭니다.
+                ytPlayer.mute();
+                ytPlayer.playVideo();
+                setTimeout(() => {
+                    ytPlayer.unMute();
+                    ytPlayer.setVolume(100);
+                    updateMuteIcon();
+                }, 400);
+            } else {
+                // 아직 API 준비가 안 됐으면 잠시 후 재시도
+                setTimeout(playBGM, 300);
+            }
+        }
+
+        function toggleMute() {
+            if (!ytPlayer || typeof ytPlayer.isMuted !== 'function') return;
+            if (ytPlayer.isMuted()) {
+                ytPlayer.unMute();
+            } else {
+                ytPlayer.mute();
+            }
+            updateMuteIcon();
+        }
+
+        function updateMuteIcon() {
+            const icon = document.getElementById('mute-btn-icon');
+            if (!icon || !ytPlayer || typeof ytPlayer.isMuted !== 'function') return;
+            if (ytPlayer.isMuted()) {
+                icon.className = 'fa-solid fa-volume-xmark';
+            } else {
+                icon.className = 'fa-solid fa-volume-high';
+            }
+        }
+    </script>
 
     <script>
         const canvas = document.getElementById('space-canvas');
@@ -515,7 +613,6 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // 별 생성 데이터
         const stars = [];
         for (let i = 0; i < 150; i++) {
             stars.push({
@@ -527,7 +624,6 @@
             });
         }
 
-        // 눈송이 생성 데이터
         const snowflakes = [];
         for (let i = 0; i < 180; i++) {
             snowflakes.push({
@@ -540,7 +636,6 @@
             });
         }
 
-        // 단풍잎 생성 데이터
         const leaves = [];
         const leafColors = ['#d97706', '#dc2626', '#b45309', '#f59e0b', '#9a3412'];
         for (let i = 0; i < 45; i++) {
@@ -576,31 +671,22 @@
 
         function drawTopDownWaveLayer(ctx, options) {
             const { reachY, amplitude, frequency, speed, color, foamColor } = options;
-            
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(0, 0);
-
             for (let x = 0; x <= canvas.width; x += 5) {
-                const y = reachY + 
-                    Math.sin(x * frequency + waveTime * speed) * amplitude + 
-                    Math.cos(x * frequency * 0.6 - waveTime * speed * 0.9) * (amplitude * 0.5);
+                const y = reachY + Math.sin(x * frequency + waveTime * speed) * amplitude + Math.cos(x * frequency * 0.6 - waveTime * speed * 0.9) * (amplitude * 0.5);
                 ctx.lineTo(x, y);
             }
-
             ctx.lineTo(canvas.width, 0);
             ctx.closePath();
             ctx.fillStyle = color;
             ctx.fill();
-
             if (foamColor) {
                 ctx.beginPath();
                 for (let x = 0; x <= canvas.width; x += 5) {
-                    const y = reachY + 
-                        Math.sin(x * frequency + waveTime * speed) * amplitude + 
-                        Math.cos(x * frequency * 0.6 - waveTime * speed * 0.9) * (amplitude * 0.5);
-                    if (x === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
+                    const y = reachY + Math.sin(x * frequency + waveTime * speed) * amplitude + Math.cos(x * frequency * 0.6 - waveTime * speed * 0.9) * (amplitude * 0.5);
+                    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 }
                 ctx.strokeStyle = foamColor;
                 ctx.lineWidth = 3;
@@ -616,7 +702,6 @@
             ctx.fillStyle = color;
             ctx.strokeStyle = 'rgba(0,0,0,0.15)';
             ctx.lineWidth = 1;
-
             ctx.beginPath();
             ctx.arc(0, 0, size, Math.PI, 0);
             ctx.lineTo(size * 0.3, size * 0.4);
@@ -624,7 +709,6 @@
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-
             ctx.beginPath();
             for (let i = -2; i <= 2; i++) {
                 ctx.moveTo(0, size * 0.4);
@@ -638,53 +722,44 @@
             ctx.save();
             ctx.translate(x, y);
             ctx.scale(scale, scale);
-
             ctx.fillStyle = '#eab308';
             ctx.strokeStyle = '#d97706';
             ctx.lineWidth = 2;
-
             ctx.beginPath();
             ctx.rect(-45, -20, 90, 40);
             ctx.fill();
             ctx.stroke();
-
             ctx.beginPath();
             ctx.rect(-25, -45, 50, 25);
             ctx.fill();
             ctx.stroke();
-
             for (let i = -25; i < 25; i += 12.5) {
                 ctx.fillRect(i, -53, 7, 8);
                 ctx.strokeRect(i, -53, 7, 8);
             }
-
             ctx.beginPath();
             ctx.rect(-50, -35, 20, 15);
             ctx.fill();
             ctx.stroke();
             ctx.fillRect(-50, -41, 6, 6); ctx.strokeRect(-50, -41, 6, 6);
             ctx.fillRect(-36, -41, 6, 6); ctx.strokeRect(-36, -41, 6, 6);
-
             ctx.beginPath();
             ctx.rect(30, -35, 20, 15);
             ctx.fill();
             ctx.stroke();
             ctx.fillRect(30, -41, 6, 6); ctx.strokeRect(30, -41, 6, 6);
             ctx.fillRect(44, -41, 6, 6); ctx.strokeRect(44, -41, 6, 6);
-
             ctx.fillStyle = '#78350f';
             ctx.beginPath();
             ctx.arc(0, 20, 10, Math.PI, 0);
             ctx.rect(-10, 10, 20, 10);
             ctx.fill();
-
             ctx.strokeStyle = '#78350f';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, -53);
             ctx.lineTo(0, -75);
             ctx.stroke();
-
             ctx.fillStyle = '#ef4444';
             ctx.beginPath();
             ctx.moveTo(0, -75);
@@ -692,7 +767,6 @@
             ctx.lineTo(0, -61);
             ctx.closePath();
             ctx.fill();
-
             ctx.restore();
         }
 
@@ -741,7 +815,6 @@
         }
         const meteors = Array.from({ length: 4 }, () => new ShootingStar(true));
 
-        // 배경 애니메이션 렌더링 루프
         function animate() {
             if (document.body.classList.contains('theme-snow')) {
                 ctx.fillStyle = '#0b1120';
@@ -807,7 +880,6 @@
 
         animate();
 
-        // 메인 앱 시작
         function startApp() {
             document.getElementById('intro-screen').classList.add('fade-out');
             setTimeout(() => {
@@ -816,9 +888,10 @@
                 setTheme('dark');
                 loadPage('profile', document.querySelector('.nav-btn.active'));
             }, 800);
+            // 사용자 클릭(제스처) 시점에 배경음악 재생 시작
+            playBGM();
         }
 
-        // 사용자 기본 데이터 상태 객체
         let userData = { 
             name: "oo님", rank: "??위", coin: 0, point: 0, 
             avatarUrl: null, bannerUrl: null, currentTheme: 'dark', customThemeBgUrl: null,
@@ -841,8 +914,8 @@
             return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
         }
 
-        // 이미지 크롭 인터랙션 제어 변수
         let imgScale = 1, imgPosX = 0, imgPosY = 0, isDragging = false, startX = 0, startY = 0, rawImgObj = new Image();
+        let bannerImgScale = 1, bannerImgPosX = 0, bannerImgPosY = 0, isBannerDragging = false, bannerStartX = 0, bannerStartY = 0, rawBannerImgObj = new Image();
 
         function updateCropTransform() {
             const img = document.getElementById('crop-img');
@@ -850,6 +923,15 @@
             if (img && slider) {
                 imgScale = parseFloat(slider.value);
                 img.style.transform = `translate(-50%, -50%) translate(${imgPosX}px, ${imgPosY}px) scale(${imgScale})`;
+            }
+        }
+
+        function updateBannerCropTransform() {
+            const img = document.getElementById('banner-crop-img');
+            const slider = document.getElementById('banner-zoom-range');
+            if (img && slider) {
+                bannerImgScale = parseFloat(slider.value);
+                img.style.transform = `translate(-50%, -50%) translate(${bannerImgPosX}px, ${bannerImgPosY}px) scale(${bannerImgScale})`;
             }
         }
 
@@ -876,9 +958,31 @@
             cropArea.addEventListener('touchstart', startDrag, { passive: false });
             window.addEventListener('touchmove', doDrag, { passive: false });
             window.addEventListener('touchend', stopDrag);
+
+            const bannerCropArea = document.getElementById('banner-crop-area');
+            const startBannerDrag = (e) => {
+                isBannerDragging = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                bannerStartX = clientX - bannerImgPosX; bannerStartY = clientY - bannerImgPosY;
+            };
+            const doBannerDrag = (e) => {
+                if (!isBannerDragging) return;
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                bannerImgPosX = clientX - bannerStartX; bannerImgPosY = clientY - bannerStartY;
+                updateBannerCropTransform();
+            };
+            const stopBannerDrag = () => { isBannerDragging = false; };
+            bannerCropArea.addEventListener('mousedown', startBannerDrag);
+            window.addEventListener('mousemove', doBannerDrag);
+            window.addEventListener('mouseup', stopBannerDrag);
+            bannerCropArea.addEventListener('touchstart', startBannerDrag, { passive: false });
+            window.addEventListener('touchmove', doBannerDrag, { passive: false });
+            window.addEventListener('touchend', stopBannerDrag);
         }
 
-        // 테마 적용 함수
         function setTheme(themeName) {
             userData.currentTheme = themeName; 
             document.body.className = '';
@@ -914,7 +1018,6 @@
         function openCreditModal() { document.getElementById('credit-modal').style.display = 'flex'; }
         function closeCreditModal() { document.getElementById('credit-modal').style.display = 'none'; }
 
-        // 하단 메뉴 페이지 전환 함수
         function loadPage(page, btn) {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             if(btn) btn.classList.add('active');
@@ -922,7 +1025,7 @@
 
             const content = document.getElementById('content');
             if (page === 'profile') {
-                const bannerStyle = userData.bannerUrl ? `background-image: url('${userData.bannerUrl}');` : '';
+                const bannerStyle = userData.bannerUrl ? `background-image: url('${userData.bannerUrl}'); background-size: cover; background-position: center;` : '';
                 const avatarHTML = userData.avatarUrl ? `<img src="${userData.avatarUrl}" class="avatar">` : `<div class="avatar"><i class="fa-solid fa-user"></i></div>`;
                 content.innerHTML = `
                     <div class="card profile-card">
@@ -1021,7 +1124,6 @@
             `).join('');
         }
 
-        // 모달 및 데이터 핸들링 함수군
         function openModal() { document.getElementById('name-input').value = userData.name; document.getElementById('modal').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
         function saveName() { userData.name = document.getElementById('name-input').value.trim(); closeModal(); loadPage('profile', document.querySelector('.nav-btn.active')); }
@@ -1100,7 +1202,70 @@
             userData.avatarUrl = canvas.toDataURL(); 
             closeCropModal(); loadPage('profile', document.querySelector('.nav-btn.active')); 
         }
-        function changeBanner(e) { const f = e.target.files[0]; if(f) { const r = new FileReader(); r.onload = (ev) => { userData.bannerUrl = ev.target.result; loadPage('profile', document.querySelector('.nav-btn.active')); }; r.readAsDataURL(f); } }
+
+        function onBannerSelected(e) {
+            const f = e.target.files[0]; if(!f) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                rawBannerImgObj.src = ev.target.result;
+                rawBannerImgObj.onload = () => {
+                    const bannerCropImg = document.getElementById('banner-crop-img');
+                    bannerCropImg.src = ev.target.result;
+                    bannerImgScale = 1; bannerImgPosX = 0; bannerImgPosY = 0;
+                    document.getElementById('banner-zoom-range').value = 1;
+                    
+                    // 모달을 먼저 화면에 표시하여 컨테이너의 올바른 clientWidth/clientHeight 값을 확보
+                    document.getElementById('banner-crop-modal').style.display = 'flex';
+
+                    setTimeout(() => {
+                        const container = document.getElementById('banner-crop-area');
+                        const cW = container.clientWidth || 300;
+                        const cH = container.clientHeight || 110;
+                        
+                        if (rawBannerImgObj.width / rawBannerImgObj.height > cW / cH) {
+                            bannerCropImg.style.height = cH + 'px';
+                            bannerCropImg.style.width = 'auto';
+                        } else {
+                            bannerCropImg.style.width = cW + 'px';
+                            bannerCropImg.style.height = 'auto';
+                        }
+                        updateBannerCropTransform();
+                    }, 50);
+                };
+            };
+            reader.readAsDataURL(f);
+        }
+
+        function closeBannerCropModal() { document.getElementById('banner-crop-modal').style.display = 'none'; }
+        
+        function saveCroppedBanner() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 600; 
+            canvas.height = 220;
+            const ctx = canvas.getContext('2d');
+            const container = document.getElementById('banner-crop-area');
+            const bannerCropImg = document.getElementById('banner-crop-img');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const cW = container.clientWidth;
+            const cH = container.clientHeight;
+            
+            const scaleX = canvas.width / cW;
+            const scaleY = canvas.height / cH;
+            
+            const renderW = bannerCropImg.offsetWidth * bannerImgScale;
+            const renderH = bannerCropImg.offsetHeight * bannerImgScale;
+            
+            const drawX = (canvas.width - renderW * scaleX) / 2 + bannerImgPosX * scaleX;
+            const drawY = (canvas.height - renderH * scaleY) / 2 + bannerImgPosY * scaleY;
+            
+            ctx.drawImage(rawBannerImgObj, drawX, drawY, renderW * scaleX, renderH * scaleY);
+            
+            userData.bannerUrl = canvas.toDataURL();
+            closeBannerCropModal();
+            loadPage('profile', document.querySelector('.nav-btn.active'));
+        }
         
         window.onload = () => { initCropEvents(); };
     </script>
