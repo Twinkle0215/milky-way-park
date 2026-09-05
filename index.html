@@ -523,6 +523,7 @@
         const BGM_VIDEO_ID = 'BccJP9c4RpM'; // https://youtube.com/shorts/BccJP9c4RpM
         let ytPlayer = null;
         let ytReady = false;
+        let isBgmMuted = false; // 유튜브 API의 isMuted()는 응답이 늦게 반영될 수 있어 직접 상태를 관리함
 
         function onYouTubeIframeAPIReady() {
             ytPlayer = new YT.Player('yt-player', {
@@ -573,6 +574,7 @@
                 setTimeout(() => {
                     ytPlayer.unMute();
                     ytPlayer.setVolume(100);
+                    isBgmMuted = false;
                     updateMuteIcon();
                 }, 400);
             } else {
@@ -582,23 +584,23 @@
         }
 
         function toggleMute() {
-            if (!ytPlayer || typeof ytPlayer.isMuted !== 'function') return;
-            if (ytPlayer.isMuted()) {
+            if (!ytPlayer) return;
+            if (isBgmMuted) {
                 ytPlayer.unMute();
+                ytPlayer.setVolume(100);
+                isBgmMuted = false;
             } else {
                 ytPlayer.mute();
+                isBgmMuted = true;
             }
             updateMuteIcon();
         }
 
         function updateMuteIcon() {
             const icon = document.getElementById('mute-btn-icon');
-            if (!icon || !ytPlayer || typeof ytPlayer.isMuted !== 'function') return;
-            if (ytPlayer.isMuted()) {
-                icon.className = 'fa-solid fa-volume-xmark';
-            } else {
-                icon.className = 'fa-solid fa-volume-high';
-            }
+            if (!icon) return;
+            // isBgmMuted가 true면 "음소거 상태(소리 안 남)" -> 스피커에 X 표시 아이콘
+            icon.className = isBgmMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
         }
     </script>
 
