@@ -570,6 +570,8 @@
                 // 일부 모바일 웹뷰는 '무음 상태의 자동재생'만 허용하기 때문에,
                 // 먼저 무음으로 재생을 시작한 뒤 곧바로 소리를 켭니다.
                 ytPlayer.mute();
+                isBgmMuted = true;
+                updateMuteIcon();
                 ytPlayer.playVideo();
                 setTimeout(() => {
                     ytPlayer.unMute();
