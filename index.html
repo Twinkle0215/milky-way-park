@@ -924,6 +924,132 @@
             return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
         }
 
+        function renderDDays() {
+            const container = document.getElementById('dday-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+            customDDays.forEach(item => {
+                const tag = calculateDDay(item.date);
+                const div = document.createElement('div');
+                div.className = 'dday-item';
+                div.innerHTML = `
+                    <div class="dday-info">
+                        <span class="dday-title">${item.title}</span>
+                        <span style="font-size:12px; color:var(--sub-text);">(${item.date})</span>
+                    </div>
+                    <div class="dday-actions">
+                        <span class="dday-tag">${tag}</span>
+                        <button class="dday-btn" onclick="openDDayModal(${item.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="dday-btn delete-btn" onclick="openDeleteModal(${item.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function openDDayModal(id = null) {
+            editingDDayId = id;
+            const modalTitle = document.getElementById('dday-modal-title');
+            const titleInput = document.getElementById('dday-title-input');
+            const dateInput = document.getElementById('dday-date-input');
+
+            if (id !== null) {
+                modalTitle.textContent = "기념일 수정";
+                const found = customDDays.find(d => d.id === id);
+                if (found) {
+                    titleInput.value = found.title;
+                    dateInput.value = found.date;
+                }
+            } else {
+                modalTitle.textContent = "기념일 추가";
+                titleInput.value = "";
+                dateInput.value = "";
+            }
+            document.getElementById('dday-modal').style.display = 'flex';
+        }
+
+        function closeDDayModal() {
+            document.getElementById('dday-modal').style.display = 'none';
+        }
+
+        function saveCustomDDay() {
+            const title = document.getElementById('dday-title-input').value.trim();
+            const date = document.getElementById('dday-date-input').value;
+            if (!title || !date) {
+                alert("이름과 날짜를 모두 입력해주세요!");
+                return;
+            }
+
+            if (editingDDayId !== null) {
+                const found = customDDays.find(d => d.id === editingDDayId);
+                if (found) {
+                    found.title = title;
+                    found.date = date;
+                }
+            } else {
+                const newId = customDDays.length > 0 ? Math.max(...customDDays.map(d => d.id)) + 1 : 1;
+                customDDays.push({ id: newId, title, date });
+            }
+
+            localStorage.setItem('user_ddays', JSON.stringify(customDDays));
+            closeDDayModal();
+            renderDDays();
+        }
+
+        function openDeleteModal(id) {
+            deletingDDayId = id;
+            document.getElementById('delete-modal').style.display = 'flex';
+        }
+
+        function closeDeleteModal() {
+            deletingDDayId = null;
+            document.getElementById('delete-modal').style.display = 'none';
+        }
+
+        function confirmDeleteDDay() {
+            if (deletingDDayId !== null) {
+                customDDays = customDDays.filter(d => d.id !== deletingDDayId);
+                localStorage.setItem('user_ddays', JSON.stringify(customDDays));
+                renderDDays();
+            }
+            closeDeleteModal();
+        }
+
+        function openModal() {
+            document.getElementById('name-input').value = userData.name;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function saveName() {
+            const val = document.getElementById('name-input').value.trim();
+            if (val) {
+                userData.name = val;
+                loadPage('profile');
+            }
+            closeModal();
+        }
+
+        function openAboutModal() {
+            document.getElementById('about-input').value = userData.aboutMe;
+            document.getElementById('about-modal').style.display = 'flex';
+        }
+
+        function closeAboutModal() {
+            document.getElementById('about-modal').style.display = 'none';
+        }
+
+        function saveAbout() {
+            const val = document.getElementById('about-input').value;
+            userData.aboutMe = val;
+            localStorage.setItem('user_about_me', val);
+            closeAboutModal();
+            loadPage('profile');
+        }
+
         let imgScale = 1, imgPosX = 0, imgPosY = 0, isDragging = false, startX = 0, startY = 0, rawImgObj = new Image();
         let bannerImgScale = 1, bannerImgPosX = 0, bannerImgPosY = 0, isBannerDragging = false, bannerStartX = 0, bannerStartY = 0, rawBannerImgObj = new Image();
 
