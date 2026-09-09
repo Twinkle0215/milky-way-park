@@ -487,8 +487,8 @@
                 <h4 style="font-size:14px; margin-top:10px; color:var(--sub-text);"><i class="fa-solid fa-palette"></i> 테마 선택</h4>
                 <div class="theme-options">
                     <button class="theme-btn" onclick="document.getElementById('theme-image-input').click()" style="border: 1px dashed var(--accent-color);"><span>🖼️ 커스텀 이미지 (업로드)</span><div class="theme-preview" style="background:#ffffff; display:flex; align-items:center; justify-content:center; font-size:10px;">📷</div></button>
-                    <button class="theme-btn" onclick="setTheme('dark')"><span>🌙 다크 테마</span><div class="theme-preview" style="background:#030308;"></div></button>
-                    <button class="theme-btn" onclick="setTheme('light')"><span>☀️ 라이트 테마</span><div class="theme-preview" style="background:#ffffff;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('dark')"><span> ⚫ 다크 테마</span><div class="theme-preview" style="background:#030308;"></div></button>
+                    <button class="theme-btn" onclick="setTheme('light')"><span> ⚪ 라이트 테마</span><div class="theme-preview" style="background:#ffffff;"></div></button>
                     <button class="theme-btn" onclick="setTheme('aurora')"><span>🌌 오로라 테마</span><div class="theme-preview" style="background:#004d40;"></div></button>
                     <button class="theme-btn" onclick="setTheme('sunset')"><span>🌅 노을 테마</span><div class="theme-preview" style="background:#ff5e36;"></div></button>
                     <button class="theme-btn" onclick="setTheme('neon')"><span>👾 네온 테마</span><div class="theme-preview" style="background:#ff007f;"></div></button>
@@ -501,7 +501,7 @@
 
                 <h4 style="font-size:14px; margin-top:15px; color:var(--sub-text);"><i class="fa-solid fa-circle-info"></i> 앱 정보</h4>
                 <button class="credit-btn" onclick="openCreditModal()">
-                    <i class="fa-solid fa-award"></i> 크레딧 확인하기
+                    <i class="fa-solid fa-award"></i> 정보 확인하기
                 </button>
 
                 <div class="modal-btns" style="margin-top:20px;">
@@ -512,7 +512,7 @@
 
         <div id="credit-modal" class="modal-overlay">
             <div class="modal-box">
-                <h3><i class="fa-solid fa-circle-info" style="color:var(--accent-color);"></i> 만들게 된 이유</h3>
+                <h3><i class="fa-solid fa-circle-info" style="color:var(--accent-color);"></i> 정보들 </h3>
                 <div class="credit-content">
                     <div class="credit-item">
                         <span class="credit-label">👤 제작자</span>
@@ -523,8 +523,8 @@
                         <div>은하수 속 놀이터 (Milky Way Park)는 제작자가 가장 좋아하는 요소인 '은하수'와 누구나 모여 즐겁게 시간을 보낼 수 있는 '놀이터'라는 상징을 합쳐 지은 이름입니다.</div>
                     </div>
                     <div class="credit-item">
-                        <span class="credit-label">💡 제작 의도</span>
-                        <div>사람들과 함께 편안하고 자유롭게 놀 수 있는 공간을 제공하는 것</div>
+                        <span class="credit-label"> 공식 디스코드 서버 </span>
+                        <div> https://discord.gg/bfFkwsNh7k </div>
                     </div>
                 </div>
                 <div class="modal-btns" style="margin-top:15px;">
@@ -911,7 +911,7 @@
         }
 
         let userData = { 
-            name: "oo님", rank: "??", coin: 500, point: 120, 
+            name: "oo님", rank: "??", coin: 500, point: 0, 
             avatarUrl: null, bannerUrl: null, currentTheme: 'dark', customThemeBgUrl: null,
             aboutMe: localStorage.getItem('user_about_me') || "자기소개를 적어보세요!"
         };
