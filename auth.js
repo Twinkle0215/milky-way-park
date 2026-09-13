@@ -44,6 +44,21 @@ auth.onAuthStateChanged((user) => {
     authReady = true;
 });
 
+let isAuthSubmitting = false;
+
+function setAuthSubmitting(submitting) {
+    isAuthSubmitting = submitting;
+    const btn = document.getElementById('auth-submit-btn');
+    btn.disabled = submitting;
+    btn.style.opacity = submitting ? '0.6' : '1';
+    if (submitting) {
+        btn.dataset.originalText = btn.textContent;
+        btn.textContent = '처리 중...';
+    } else if (btn.dataset.originalText) {
+        btn.textContent = btn.dataset.originalText;
+    }
+}
+
 // ===== 회원가입 =====
 async function signUp() {
     const email = document.getElementById('auth-email-input').value.trim();
@@ -66,6 +81,7 @@ async function signUp() {
     }
 
     try {
+        setAuthSubmitting(true);
         const cred = await auth.createUserWithEmailAndPassword(email, password);
         const defaultData = buildDefaultUserData(nickname);
         await db.collection('users').doc(cred.user.uid).set(defaultData);
@@ -85,6 +101,8 @@ async function signUp() {
         enterMainApp();
     } catch (err) {
         errorBox.textContent = translateAuthError(err.code);
+    } finally {
+        setAuthSubmitting(false);
     }
 }
 
@@ -101,12 +119,15 @@ async function logIn() {
     }
 
     try {
+        setAuthSubmitting(true);
         const cred = await auth.signInWithEmailAndPassword(email, password);
         await loadUserDataFromFirestore(cred.user.uid);
         closeAuthModal();
         enterMainApp();
     } catch (err) {
         errorBox.textContent = translateAuthError(err.code);
+    } finally {
+        setAuthSubmitting(false);
     }
 }
 
@@ -168,9 +189,13 @@ function translateAuthError(code) {
         case 'auth/email-already-in-use': return '이미 가입된 이메일입니다.';
         case 'auth/invalid-email': return '올바른 이메일 형식이 아닙니다.';
         case 'auth/weak-password': return '비밀번호가 너무 약합니다. (6자 이상)';
-        case 'auth/user-not-found':
+        case 'auth/user-not-found': return '가입되지 않은 이메일입니다.';
         case 'auth/wrong-password':
         case 'auth/invalid-credential': return '이메일 또는 비밀번호가 올바르지 않습니다.';
+        case 'auth/too-many-requests': return '시도가 너무 많아 잠시 제한되었어요. 5~10분 후 다시 시도해주세요.';
+        case 'auth/network-request-failed': return '네트워크 연결을 확인해주세요.';
+        case 'auth/user-disabled': return '이용이 제한된 계정입니다.';
+        case 'auth/missing-email': return '이메일을 입력해주세요.';
         default: return '오류가 발생했습니다. 다시 시도해주세요. (' + code + ')';
     }
 }
@@ -199,6 +224,7 @@ function setAuthMode(mode) {
     document.getElementById('auth-submit-btn').setAttribute('data-mode', mode);
     document.getElementById('auth-switch-text').textContent = isSignup ? '이미 계정이 있으신가요?' : '계정이 없으신가요?';
     document.getElementById('auth-switch-btn').textContent = isSignup ? '로그인하기' : '회원가입하기';
+    document.getElementById('auth-forgot-row').style.display = isSignup ? 'none' : 'block';
 
     const agreeRow = document.getElementById('auth-agree-row');
     agreeRow.style.display = isSignup ? 'flex' : 'none';
@@ -231,8 +257,49 @@ function togglePasswordVisibility() {
 }
 
 function submitAuthForm() {
+    if (isAuthSubmitting) return;
     const mode = document.getElementById('auth-submit-btn').getAttribute('data-mode');
     if (mode === 'signup') signUp(); else logIn();
+}
+
+function openResetModal() {
+    document.getElementById('reset-email-input').value = document.getElementById('auth-email-input').value.trim();
+    document.getElementById('reset-msg').textContent = '';
+    document.getElementById('reset-modal').style.display = 'flex';
+}
+
+function closeResetModal() {
+    document.getElementById('reset-modal').style.display = 'none';
+}
+
+async function sendPasswordReset() {
+    const email = document.getElementById('reset-email-input').value.trim();
+    const msgBox = document.getElementById('reset-msg');
+    const btn = document.getElementById('reset-submit-btn');
+
+    if (!email) {
+        msgBox.style.color = '#ef5350';
+        msgBox.textContent = '이메일을 입력해주세요.';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    const originalText = btn.textContent;
+    btn.textContent = '전송 중...';
+
+    try {
+        await auth.sendPasswordResetEmail(email);
+        msgBox.style.color = '#4CAF50';
+        msgBox.textContent = '재설정 메일을 보냈어요. 메일함(스팸함 포함)을 확인해주세요.';
+    } catch (err) {
+        msgBox.style.color = '#ef5350';
+        msgBox.textContent = translateAuthError(err.code);
+    } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.textContent = originalText;
+    }
 }
 
 // ===== 인트로 화면 이후 진입 지점 (script.js의 startApp에서 호출됨) =====
