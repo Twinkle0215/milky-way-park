@@ -19,8 +19,28 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// ===== 특정 계정 전용 칭호 자동 지급 =====
+// 아래 맵에 "이메일: [칭호id, ...]" 형태로 추가하면, 그 이메일로 로그인할 때
+// 해당 칭호들이 자동으로 소유 목록에 추가됩니다. (장착 여부는 유저가 설정에서 직접 선택)
+// 칭호 id는 script.js의 TITLE_CATALOG에 정의된 것만 사용 가능합니다.
+const SPECIAL_TITLE_GRANTS = {
+    "pyhoo0215@example.com": ['creator', 'eternal_test_subject', 'alpha_tester'],                                  // 본인(개발자) 이메일로 교체하세요
+    "umy35824@gmail.com": ['eternal_test_subject', 'alpha_tester']   // 동생 이메일로 교체하세요
+};
+
 let currentUser = null;
 let authReady = false;
+
+// 로그인한 계정에 특별 지급 칭호가 있으면 소유 목록에 추가
+function syncSpecialTitles() {
+    if (!userData.titles) userData.titles = ['newbie'];
+    if (!currentUser) return;
+    const grants = SPECIAL_TITLE_GRANTS[currentUser.email];
+    if (!grants) return;
+    grants.forEach(id => {
+        if (!userData.titles.includes(id)) userData.titles.push(id);
+    });
+}
 
 // 기본(신규 가입자) 유저 데이터 틀
 function buildDefaultUserData(nickname) {
@@ -34,7 +54,9 @@ function buildDefaultUserData(nickname) {
         currentTheme: 'dark',
         customThemeBgUrl: null,
         aboutMe: "자기소개를 적어보세요!",
-        ddays: [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }]
+        ddays: [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }],
+        titles: ['newbie'],
+        equippedTitle: 'newbie'
     };
 }
 
@@ -83,6 +105,7 @@ async function signUp() {
     try {
         setAuthSubmitting(true);
         const cred = await auth.createUserWithEmailAndPassword(email, password);
+        currentUser = cred.user;
         const defaultData = buildDefaultUserData(nickname);
         await db.collection('users').doc(cred.user.uid).set(defaultData);
 
@@ -95,7 +118,11 @@ async function signUp() {
         userData.currentTheme = defaultData.currentTheme;
         userData.customThemeBgUrl = defaultData.customThemeBgUrl;
         userData.aboutMe = defaultData.aboutMe;
+        userData.titles = defaultData.titles.slice();
+        userData.equippedTitle = defaultData.equippedTitle;
         customDDays = defaultData.ddays;
+        syncSpecialTitles();
+        if (SPECIAL_TITLE_GRANTS[currentUser.email]) await saveUserDataToFirestore();
 
         closeAuthModal();
         enterMainApp();
@@ -121,7 +148,9 @@ async function logIn() {
     try {
         setAuthSubmitting(true);
         const cred = await auth.signInWithEmailAndPassword(email, password);
+        currentUser = cred.user;
         await loadUserDataFromFirestore(cred.user.uid);
+        syncSpecialTitles();
         closeAuthModal();
         enterMainApp();
     } catch (err) {
@@ -159,6 +188,8 @@ async function loadUserDataFromFirestore(uid) {
         userData.currentTheme = data.currentTheme || 'dark';
         userData.customThemeBgUrl = data.customThemeBgUrl || null;
         userData.aboutMe = data.aboutMe || "자기소개를 적어보세요!";
+        userData.titles = (data.titles && data.titles.length) ? data.titles : ['newbie'];
+        userData.equippedTitle = data.equippedTitle || 'newbie';
         customDDays = data.ddays || [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }];
     }
 }
@@ -177,6 +208,8 @@ async function saveUserDataToFirestore() {
             currentTheme: userData.currentTheme,
             customThemeBgUrl: userData.customThemeBgUrl,
             aboutMe: userData.aboutMe,
+            titles: userData.titles,
+            equippedTitle: userData.equippedTitle,
             ddays: customDDays
         }, { merge: true });
     } catch (err) {
@@ -309,7 +342,10 @@ function proceedAfterIntro() {
         return;
     }
     if (currentUser) {
-        loadUserDataFromFirestore(currentUser.uid).then(enterMainApp);
+        loadUserDataFromFirestore(currentUser.uid).then(() => {
+            syncSpecialTitles();
+            enterMainApp();
+        });
     } else {
         document.body.style.overflow = 'hidden';
         openAuthModal('login');
