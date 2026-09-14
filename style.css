@@ -357,3 +357,50 @@
         .nav-btn i { font-size: 20px; display: block; }
         .nav-btn span { font-size: 10px; margin-top: 4px; font-weight: 500; display: block; }
         .nav-btn.active { color: var(--nav-active-color); font-weight: bold; }
+
+        /* 드래그(스와이프)로 고르는 테마/칭호 캐러셀 */
+        .picker-track {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            padding: 10px 38% 16px 38%;
+            margin: 10px 0 0 0;
+            scrollbar-width: none;
+        }
+        .picker-track::-webkit-scrollbar { display: none; }
+        .picker-item {
+            flex: 0 0 auto;
+            width: 92px;
+            scroll-snap-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            opacity: 0.5;
+            transform: scale(0.85);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .picker-item.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .picker-swatch {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid var(--card-border);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        }
+        .picker-item.active .picker-swatch {
+            border-color: var(--accent-color);
+        }
+        .picker-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            color: var(--text-color);
+            white-space: nowrap;
+        }
