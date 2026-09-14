@@ -359,11 +359,21 @@ function startApp() {
     playBGM();
 }
 
+// ===== 칭호 시스템 =====
+// 새 칭호를 추가하려면 여기에 항목만 추가하면 됩니다. (id: {name, icon, badgeStyle})
+const TITLE_CATALOG = {
+    newbie:  { name: '뉴비',   icon: 'fa-seedling', badgeStyle: 'background:rgba(76,175,80,0.15); color:#4CAF50; border:1px solid rgba(76,175,80,0.3);' },
+    creator: { name: '제작자', icon: 'fa-crown',    badgeStyle: 'background:linear-gradient(135deg,#a855f7,#ec4899); color:#fff; border:none;' },
+    eternal_test_subject: { name: '영원한 실험체', icon: 'fa-flask',              badgeStyle: 'background:linear-gradient(135deg,#38bdf8,#0284c7); color:#fff; border:none;' },
+    alpha_tester:          { name: '알파 테스터',   icon: 'fa-screwdriver-wrench', badgeStyle: 'background:linear-gradient(135deg,#ef4444,#b91c1c); color:#fff; border:none;' }
+};
+
 // 로그인 후 auth.js의 loadUserDataFromFirestore()가 아래 값을 실제 계정 데이터로 채웁니다.
 let userData = { 
     name: "oo님", rank: "??", coin: 500, point: 0, 
     avatarUrl: null, bannerUrl: null, currentTheme: 'dark', customThemeBgUrl: null,
-    aboutMe: "자기소개를 적어보세요!"
+    aboutMe: "자기소개를 적어보세요!",
+    titles: ['newbie'], equippedTitle: 'newbie'
 };
 
 let customDDays = [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }];
@@ -586,6 +596,21 @@ function initCropEvents() {
 
 initCropEvents();
 
+// 테마 목록 (여기에 항목 추가하면 캐러셀에도 자동으로 반영됨)
+const THEME_LIST = [
+    { id: 'dark', name: '다크', emoji: '⚫', swatch: '#030308' },
+    { id: 'light', name: '라이트', emoji: '⚪', swatch: '#ffffff' },
+    { id: 'aurora', name: '오로라', emoji: '🌌', swatch: '#004d40' },
+    { id: 'sunset', name: '노을', emoji: '🌅', swatch: '#ff5e36' },
+    { id: 'neon', name: '네온', emoji: '👾', swatch: '#ff007f' },
+    { id: 'lavender', name: '라벤더', emoji: '🪻', swatch: '#c084fc' },
+    { id: 'deepspace', name: '딥 스페이스', emoji: '🚀', swatch: '#1e1b4b' },
+    { id: 'summer', name: '여름', emoji: '🏖️', swatch: '#38bdf8' },
+    { id: 'autumn', name: '가을', emoji: '🍁', swatch: '#d97706' },
+    { id: 'snow', name: '겨울', emoji: '❄️', swatch: '#38bdf8' },
+    { id: 'custom-image', name: '커스텀 이미지', emoji: '🖼️', swatch: null }
+];
+
 function setTheme(themeName) {
     userData.currentTheme = themeName; 
     document.body.className = '';
@@ -612,14 +637,164 @@ function setCustomImageTheme(e) {
         reader.onload = function(ev) {
             userData.customThemeBgUrl = ev.target.result;
             setTheme('custom-image');
+            setPickerActive('theme-picker-track', 'custom-image');
         };
         reader.readAsDataURL(file);
     }
 }
 
+function renderEquippedTitleBadge() {
+    const owned = userData.titles && userData.titles.length ? userData.titles : ['newbie'];
+    const equippedId = owned.includes(userData.equippedTitle) ? userData.equippedTitle : 'newbie';
+    const t = TITLE_CATALOG[equippedId] || TITLE_CATALOG.newbie;
+    return `<span class="badge" style="${t.badgeStyle} margin-left:6px;"><i class="fa-solid ${t.icon}" style="font-size:10px; margin-right:4px;"></i>${t.name}</span>`;
+}
+
+// ===== 드래그(스와이프) 캐러셀 공통 로직 =====
+
+// 트랙 안에서 현재 활성(active) 항목을 지정하고 그 항목이 가운데 오도록 스크롤
+function setPickerActive(trackId, id, smooth = true) {
+    const track = document.getElementById(trackId);
+    if (!track) return;
+    Array.from(track.children).forEach(c => c.classList.toggle('active', c.getAttribute('data-id') === id));
+    const el = track.querySelector(`[data-id="${id}"]`);
+    if (el) el.scrollIntoView({ inline: 'center', block: 'nearest', behavior: smooth ? 'smooth' : 'instant' });
+}
+
+// 스크롤(드래그)이 멈추면 가운데에 가장 가까운 항목을 찾아 onSettle로 알려줌
+function attachPickerScrollHandler(trackId, onSettle) {
+    const track = document.getElementById(trackId);
+    if (!track || track.dataset.scrollBound) return;
+    track.dataset.scrollBound = '1';
+    let scrollTimer = null;
+    track.addEventListener('scroll', () => {
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+            const trackRect = track.getBoundingClientRect();
+            const centerX = trackRect.left + trackRect.width / 2;
+            let closest = null, closestDist = Infinity;
+            Array.from(track.children).forEach(child => {
+                const r = child.getBoundingClientRect();
+                const dist = Math.abs((r.left + r.width / 2) - centerX);
+                if (dist < closestDist) { closestDist = dist; closest = child; }
+            });
+            if (closest) {
+                Array.from(track.children).forEach(c => c.classList.remove('active'));
+                closest.classList.add('active');
+                onSettle(closest.getAttribute('data-id'));
+            }
+        }, 120);
+    });
+}
+
+// ===== 테마 선택 캐러셀 =====
+function openThemePicker() {
+    const track = document.getElementById('theme-picker-track');
+    let html = '';
+    THEME_LIST.forEach(t => {
+        const isActive = userData.currentTheme === t.id;
+        const swatchStyle = t.swatch
+            ? `background:${t.swatch};`
+            : `background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; font-size:26px;`;
+        html += `
+            <div class="picker-item ${isActive ? 'active' : ''}" data-id="${t.id}" onclick="onThemePick('${t.id}')">
+                <div class="picker-swatch" style="${swatchStyle}">${t.swatch ? '' : '📷'}</div>
+                <div class="picker-label">${t.emoji} ${t.name}</div>
+            </div>`;
+    });
+    track.innerHTML = html;
+    attachPickerScrollHandler('theme-picker-track', onThemeSettled);
+    requestAnimationFrame(() => setPickerActive('theme-picker-track', userData.currentTheme, false));
+    document.getElementById('theme-picker-modal').style.display = 'flex';
+}
+
+function closeThemePicker() {
+    document.getElementById('theme-picker-modal').style.display = 'none';
+    const label = document.getElementById('current-theme-label');
+    if (label) {
+        const t = THEME_LIST.find(t => t.id === userData.currentTheme);
+        label.textContent = t ? t.name : userData.currentTheme;
+    }
+}
+
+function onThemePick(id) {
+    if (id === 'custom-image') {
+        document.getElementById('theme-image-input').click();
+        return;
+    }
+    setPickerActive('theme-picker-track', id);
+    setTheme(id);
+}
+
+function onThemeSettled(id) {
+    if (id === 'custom-image') return; // 드래그로만 스쳐 지나간 경우엔 자동 적용하지 않음 (탭해야 업로드 시작)
+    setTheme(id);
+}
+
+// ===== 칭호 선택 캐러셀 =====
+function openTitlePicker() {
+    const track = document.getElementById('title-picker-track');
+    const owned = userData.titles && userData.titles.length ? userData.titles : ['newbie'];
+    let html = '';
+    owned.forEach(id => {
+        const t = TITLE_CATALOG[id];
+        if (!t) return;
+        const isActive = userData.equippedTitle === id;
+        html += `
+            <div class="picker-item ${isActive ? 'active' : ''}" data-id="${id}" onclick="onTitlePick('${id}')">
+                <div class="picker-swatch" style="${t.badgeStyle} display:flex; align-items:center; justify-content:center; font-size:26px;">
+                    <i class="fa-solid ${t.icon}"></i>
+                </div>
+                <div class="picker-label">${t.name}</div>
+            </div>`;
+    });
+    track.innerHTML = html;
+    attachPickerScrollHandler('title-picker-track', onTitleSettled);
+    requestAnimationFrame(() => setPickerActive('title-picker-track', userData.equippedTitle, false));
+    document.getElementById('title-picker-modal').style.display = 'flex';
+}
+
+function closeTitlePicker() {
+    document.getElementById('title-picker-modal').style.display = 'none';
+    const label = document.getElementById('current-title-label');
+    if (label) {
+        const t = TITLE_CATALOG[userData.equippedTitle];
+        label.textContent = t ? t.name : '뉴비';
+    }
+}
+
+function onTitlePick(id) {
+    setPickerActive('title-picker-track', id);
+    selectTitle(id);
+}
+
+function onTitleSettled(id) {
+    selectTitle(id);
+}
+
+function selectTitle(id) {
+    const owned = userData.titles && userData.titles.length ? userData.titles : ['newbie'];
+    if (!owned.includes(id)) return;
+    userData.equippedTitle = id;
+    if (document.getElementById('content').innerHTML.includes('about-me-box')) loadPage('profile');
+    if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
+}
+
 function openSettingsModal() {
     const emailDisplay = document.getElementById('account-email-display');
     if (emailDisplay) emailDisplay.textContent = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : '-';
+
+    const themeLabel = document.getElementById('current-theme-label');
+    if (themeLabel) {
+        const t = THEME_LIST.find(t => t.id === userData.currentTheme);
+        themeLabel.textContent = t ? t.name : userData.currentTheme;
+    }
+    const titleLabel = document.getElementById('current-title-label');
+    if (titleLabel) {
+        const t = TITLE_CATALOG[userData.equippedTitle];
+        titleLabel.textContent = t ? t.name : '뉴비';
+    }
+
     document.getElementById('settings-modal').style.display = 'flex';
 }
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
@@ -651,6 +826,7 @@ function loadPage(page, btn) {
                             <button class="edit-name-btn" onclick="openModal()"><i class="fa-solid fa-pen"></i></button>
                         </div>
                         <span class="badge"><i class="fa-solid fa-trophy" style="font-size:10px; margin-right:4px;"></i>${userData.rank}</span>
+                        ${renderEquippedTitleBadge()}
                     </div>
                     <div class="about-me-box">
                         <div class="about-me-header">
@@ -667,9 +843,7 @@ function loadPage(page, btn) {
                     <div class="stat-item"><div class="stat-title">보유 코인</div><div class="stat-value" style="color:#ffca28;">${userData.coin.toLocaleString()}원</div></div>
                     <div class="stat-item"><div class="stat-title">랭크 포인트</div><div class="stat-value" style="color:#42a5f5;">${userData.point} P</div></div>
                 </div>
-            </div>`;
-    } else if (page === 'study') {
-        content.innerHTML = `
+            </div>
             <div class="card" style="text-align:left;">
                 <div class="card-header-flex">
                     <h3 style="margin:0; font-size:16px;"><i class="fa-solid fa-calendar-check" style="color:var(--accent-color);"></i> D-Day</h3>
@@ -693,13 +867,7 @@ function loadPage(page, btn) {
                         </tbody>
                     </table>
                 </div>
-                
-                <div class="study-notes-section">
-                    <div class="study-notes-header">
-                        
-                    
-                </div>
-            `;
+            </div>`;
         renderDDays();
     } else if (page === 'quest') {
         content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-scroll"></i><h2>퀘스트 시스템 업데이트 예정</h2><p>일일 퀘스트, 도전 과제 및 보상 기능이 추가될 예정입니다.</p></div>`;
