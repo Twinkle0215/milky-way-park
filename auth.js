@@ -282,10 +282,10 @@ function togglePasswordVisibility() {
     const icon = document.getElementById('auth-password-toggle-icon');
     if (input.type === 'password') {
         input.type = 'text';
-        icon.className = 'fa-solid fa-eye-slash';
+        icon.className = 'fa-solid fa-eye';
     } else {
         input.type = 'password';
-        icon.className = 'fa-solid fa-eye';
+        icon.className = 'fa-solid fa-eye-slash';
     }
 }
 
