@@ -124,8 +124,10 @@ async function signUp() {
         syncSpecialTitles();
         if (SPECIAL_TITLE_GRANTS[currentUser.email]) await saveUserDataToFirestore();
 
+        await cred.user.sendEmailVerification();
+
         closeAuthModal();
-        enterMainApp();
+        openVerifyModal(email);
     } catch (err) {
         errorBox.textContent = translateAuthError(err.code);
     } finally {
@@ -149,6 +151,13 @@ async function logIn() {
         setAuthSubmitting(true);
         const cred = await auth.signInWithEmailAndPassword(email, password);
         currentUser = cred.user;
+
+        if (!cred.user.emailVerified) {
+            closeAuthModal();
+            openVerifyModal(email);
+            return;
+        }
+
         await loadUserDataFromFirestore(cred.user.uid);
         syncSpecialTitles();
         closeAuthModal();
@@ -289,6 +298,72 @@ function togglePasswordVisibility() {
     }
 }
 
+// ===== 이메일 인증 대기 모달 =====
+function openVerifyModal(email) {
+    document.getElementById('verify-email-text').textContent = email;
+    document.getElementById('verify-msg').textContent = '';
+    document.getElementById('verify-modal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeVerifyModal() {
+    document.getElementById('verify-modal').style.display = 'none';
+}
+
+// 인증 메일 재전송 (과도한 요청 방지를 위해 15초 쿨다운)
+async function resendVerificationEmail() {
+    const msgBox = document.getElementById('verify-msg');
+    const btn = document.getElementById('verify-resend-btn');
+    if (!currentUser) return;
+
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    try {
+        await currentUser.sendEmailVerification();
+        msgBox.style.color = '#4CAF50';
+        msgBox.textContent = '인증 메일을 다시 보냈어요.';
+    } catch (err) {
+        msgBox.style.color = '#ef5350';
+        msgBox.textContent = translateAuthError(err.code);
+    } finally {
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }, 15000);
+    }
+}
+
+// "인증 확인했어요" 버튼: 최신 인증 상태를 다시 불러와서 확인
+async function checkVerificationStatus() {
+    const msgBox = document.getElementById('verify-msg');
+    if (!currentUser) return;
+
+    try {
+        await currentUser.reload();
+        currentUser = auth.currentUser;
+        if (currentUser.emailVerified) {
+            closeVerifyModal();
+            await loadUserDataFromFirestore(currentUser.uid);
+            syncSpecialTitles();
+            enterMainApp();
+        } else {
+            msgBox.style.color = '#ef5350';
+            msgBox.textContent = '아직 인증이 확인되지 않았어요. 메일의 링크를 먼저 눌러주세요.';
+        }
+    } catch (err) {
+        msgBox.style.color = '#ef5350';
+        msgBox.textContent = '확인 중 오류가 발생했어요. 다시 시도해주세요.';
+    }
+}
+
+// 인증 대기 화면에서 다른 계정으로 로그인하고 싶을 때
+async function cancelVerification() {
+    await auth.signOut();
+    currentUser = null;
+    closeVerifyModal();
+    openAuthModal('login');
+}
+
 function submitAuthForm() {
     if (isAuthSubmitting) return;
     const mode = document.getElementById('auth-submit-btn').getAttribute('data-mode');
@@ -342,6 +417,10 @@ function proceedAfterIntro() {
         return;
     }
     if (currentUser) {
+        if (!currentUser.emailVerified) {
+            openVerifyModal(currentUser.email);
+            return;
+        }
         loadUserDataFromFirestore(currentUser.uid).then(() => {
             syncSpecialTitles();
             enterMainApp();
