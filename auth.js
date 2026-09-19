@@ -248,7 +248,7 @@ function openAuthModal(mode = 'login') {
     document.getElementById('auth-email-input').value = '';
     document.getElementById('auth-password-input').value = '';
     document.getElementById('auth-password-input').type = 'password';
-    document.getElementById('auth-password-toggle-icon').className = 'fa-solid fa-eye';
+    document.getElementById('auth-password-toggle-icon').className = 'fa-solid fa-eye-slash';
     document.getElementById('auth-nickname-input').value = '';
     setAuthMode(mode);
     document.getElementById('auth-modal').style.display = 'flex';
