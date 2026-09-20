@@ -26,6 +26,7 @@ const db = firebase.firestore();
 const SPECIAL_TITLE_GRANTS = {
     "pyhoo0215@example.com": ['creator', 'eternal_test_subject', 'alpha_tester'],                                  // 본인(개발자) 이메일로 교체하세요
     "umy35824@gmail.com": ['eternal_test_subject', 'alpha_tester']   // 동생 이메일로 교체하세요
+   ,"godtwinkle0215@gmail.com": ['alpha_tester']   // 동생 이메일로 교체하세요
 };
 
 let currentUser = null;
