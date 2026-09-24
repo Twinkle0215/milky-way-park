@@ -596,6 +596,67 @@ function initCropEvents() {
 
 initCropEvents();
 
+// ===== 상점: 테마 구매 =====
+function renderThemeShop() {
+    const grid = document.getElementById('theme-shop-grid');
+    if (!grid) return;
+    const sellable = THEME_LIST.filter(t => t.id !== 'dark' && t.id !== 'light');
+    grid.innerHTML = sellable.map(t => {
+        const owned = isThemeOwned(t.id);
+        return `
+            <div class="game-card" style="${owned ? 'opacity:0.6;' : ''}">
+                <div class="game-icon">${t.emoji}</div>
+                <div>
+                    <div class="game-title">${t.name}</div>
+                    <div class="game-desc">${owned ? '보유중' : THEME_PRICE.toLocaleString() + '원'}</div>
+                </div>
+                <button class="game-play-btn" ${owned ? 'style="background:#555;" disabled' : `onclick="buyTheme('${t.id}')"`}>${owned ? '보유중' : '구매하기'}</button>
+            </div>`;
+    }).join('');
+}
+
+async function buyTheme(id) {
+    if (isThemeOwned(id)) return;
+    const theme = THEME_LIST.find(t => t.id === id);
+    if (!confirm(`${theme ? theme.emoji + ' ' + theme.name : id} 테마를 ${THEME_PRICE.toLocaleString()}원에 구매할까요?`)) return;
+
+    // 코인 차감 + 소유 목록 추가를 Firestore 트랜잭션으로 원자적으로 처리.
+    // (기존에는 로컬 값을 통째로 덮어써서, 그 사이 다른 저장이 끼어들면 방금 산 테마가 사라지는 버그가 있었음)
+    const ref = db.collection('users').doc(currentUser.uid);
+    let result = 'ok';
+    try {
+        await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            const data = snap.data() || {};
+            const serverCoin = data.coin ?? 0;
+            const serverOwned = (data.ownedThemes && data.ownedThemes.length) ? data.ownedThemes : ['dark', 'light'];
+            if (serverOwned.includes(id)) { result = 'already'; return; }
+            if (serverCoin < THEME_PRICE) { result = 'poor'; return; }
+            tx.update(ref, {
+                coin: serverCoin - THEME_PRICE,
+                ownedThemes: firebase.firestore.FieldValue.arrayUnion(id)
+            });
+        });
+    } catch (e) {
+        console.error('테마 구매 실패:', e);
+        alert('구매 중 오류가 발생했어요. 다시 시도해주세요.');
+        return;
+    }
+
+    if (result === 'poor') {
+        alert(`코인이 부족해요! (필요: ${THEME_PRICE.toLocaleString()}원)`);
+        return;
+    }
+
+    // 서버 기준으로 로컬 상태 동기화
+    if (!userData.ownedThemes) userData.ownedThemes = ['dark', 'light'];
+    if (!userData.ownedThemes.includes(id)) userData.ownedThemes.push(id);
+    if (result === 'ok') userData.coin -= THEME_PRICE;
+    updateTopMoney();
+    renderThemeShop();
+    if (result === 'ok') alert('✅ 구매 완료! 설정 → 테마 선택에서 장착할 수 있어요.');
+}
+
 // 테마 목록 (여기에 항목 추가하면 캐러셀에도 자동으로 반영됨)
 const THEME_LIST = [
     { id: 'dark', name: '다크', emoji: '⚫', swatch: '#030308' },
@@ -610,6 +671,13 @@ const THEME_LIST = [
     { id: 'snow', name: '겨울', emoji: '❄️', swatch: '#38bdf8' },
     { id: 'custom-image', name: '커스텀 이미지', emoji: '🖼️', swatch: null }
 ];
+
+const THEME_PRICE = 1000; // 다크/라이트 제외 모든 테마 가격
+
+function isThemeOwned(id) {
+    if (id === 'dark' || id === 'light') return true; // 기본 무료 테마
+    return !!(userData.ownedThemes && userData.ownedThemes.includes(id));
+}
 
 function setTheme(themeName) {
     userData.currentTheme = themeName; 
@@ -693,13 +761,17 @@ function openThemePicker() {
     let html = '';
     THEME_LIST.forEach(t => {
         const isActive = userData.currentTheme === t.id;
+        const owned = isThemeOwned(t.id);
         const swatchStyle = t.swatch
             ? `background:${t.swatch};`
             : `background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; font-size:26px;`;
         html += `
-            <div class="picker-item ${isActive ? 'active' : ''}" data-id="${t.id}" onclick="onThemePick('${t.id}')">
-                <div class="picker-swatch" style="${swatchStyle}">${t.swatch ? '' : '📷'}</div>
-                <div class="picker-label">${t.emoji} ${t.name}</div>
+            <div class="picker-item ${isActive ? 'active' : ''}" data-id="${t.id}" onclick="onThemePick('${t.id}')" style="${owned ? '' : 'opacity:0.5;'}">
+                <div class="picker-swatch" style="${swatchStyle} position:relative;">
+                    ${t.swatch ? '' : '📷'}
+                    ${owned ? '' : '<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.35); border-radius:inherit; font-size:20px;">🔒</div>'}
+                </div>
+                <div class="picker-label">${t.emoji} ${t.name}${owned ? '' : ` <span style="font-size:10px; color:var(--sub-text);">(${THEME_PRICE.toLocaleString()}원)</span>`}</div>
             </div>`;
     });
     track.innerHTML = html;
@@ -718,6 +790,11 @@ function closeThemePicker() {
 }
 
 function onThemePick(id) {
+    if (!isThemeOwned(id)) {
+        setPickerActive('theme-picker-track', userData.currentTheme); // 원래 위치로 되돌림
+        alert(`🔒 아직 보유하지 않은 테마예요.\n상점에서 ${THEME_PRICE.toLocaleString()}원에 구매할 수 있어요!`);
+        return;
+    }
     if (id === 'custom-image') {
         document.getElementById('theme-image-input').click();
         return;
@@ -727,6 +804,7 @@ function onThemePick(id) {
 }
 
 function onThemeSettled(id) {
+    if (!isThemeOwned(id)) return; // 잠긴 테마는 스크롤로 스쳐도 자동 장착되지 않음
     if (id === 'custom-image') return; // 드래그로만 스쳐 지나간 경우엔 자동 적용하지 않음 (탭해야 업로드 시작)
     setTheme(id);
 }
@@ -918,14 +996,23 @@ function loadPage(page, btn) {
         content.innerHTML = `
             <div class="card" style="text-align:left;">
                 <h2 style="margin-top:0; font-size:18px;"><i class="fa-solid fa-store" style="color:var(--accent-color);"></i> 은하수 상점</h2>
-                <div class="empty-shop-box">
-                    <div class="empty-icon">🎁</div>
-                    <h3 style="margin-bottom:8px; font-size:16px;">지금은 판매 중인 상품이 없습니다</h3>
-                    <p style="font-size:13px; color:var(--sub-text); line-height:1.5;">
-                        곧 멋진 아이템과 테마가 추가될 예정입니다.<br>다음 업데이트를 기대해 주세요!
-                    </p>
+                <div class="game-grid">
+                    <div class="game-card" onclick="LottoUI.open()">
+                        <div class="game-icon">🎰</div>
+                        <div>
+                            <div class="game-title">은하수 로또</div>
+                            <div class="game-desc">1,000원 · 매주 토요일 추첨</div>
+                        </div>
+                        <button class="game-play-btn">구매하기</button>
+                    </div>
                 </div>
+            </div>
+            <div class="card" style="text-align:left; margin-top:14px;">
+                <h2 style="margin-top:0; font-size:18px;"><i class="fa-solid fa-palette" style="color:var(--accent-color);"></i> 테마</h2>
+                <p style="font-size:12px; color:var(--sub-text); margin-top:-6px;">구매한 테마는 설정 → 테마 선택에서 장착할 수 있어요.</p>
+                <div class="game-grid" id="theme-shop-grid"></div>
             </div>`;
+        renderThemeShop();
     }
 }
 
