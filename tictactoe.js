@@ -13,6 +13,7 @@
     const LS_KEY = 'tttLastRoomId';
     const COLLECTION = 'omokRooms';           // 오목과 같은 곳에 저장 (보안 규칙을 따로 추가할 필요 없음). game 필드로 구분
     const WIN_REWARD = 1000;                 // 승리 보상 (코인만 지급, 랭크 포인트 X)
+    const LOSE_DEDUCTION = 500;              // 패배 벌금 (코인만 차감)
     const REWARD_MIN_MOVES = 5;              // 기권/시간초과 승리는 이 수 이상 둔 판에서만 보상 (0이면 항상 지급)
 
     // ----- 이 게임 전용 스타일 (기존 style.css는 건드리지 않음) -----
@@ -328,6 +329,7 @@
             if (room.status === 'finished') {
                 lsClear();
                 if (room.winner === uid && !room.rewarded) claimWinReward();
+                if (room.winner && room.winner !== uid && !room.losePenaltyApplied) claimLoseDeduction();
             }
             renderAll();
         }, (err) => {
@@ -422,7 +424,8 @@
                     : room.endReason === 'timeout' ? `${esc(loserName)}님이 시간 초과했어요.`
                         : `${esc(winnerName)}님이 3목을 완성했어요!`;
                 const rewardText = (iWon && room.rewarded) ? ` (+${WIN_REWARD.toLocaleString()}원)` : '';
-                html = `${why}<br><b>${iWon ? '🎉 승리하셨습니다!' + rewardText : '😢 패배했어요...'}</b>`;
+                const penaltyText = (!iWon && room.losePenaltyApplied) ? ` (-${LOSE_DEDUCTION.toLocaleString()}원)` : '';
+                html = `${why}<br><b>${iWon ? '🎉 승리하셨습니다!' + rewardText : '😢 패배했어요...' + penaltyText}</b>`;
             }
         }
         box.innerHTML = html;
@@ -481,6 +484,34 @@
         } catch (e) {
             rewardInFlight = false;
             console.warn('승리 보상 처리 실패:', e);
+        }
+    }
+
+    // 패배 벌금: 방 문서의 losePenaltyApplied 플래그를 트랜잭션으로 한 번만 true로 바꾼 사람만 코인을 깎임
+    async function claimLoseDeduction() {
+        if (rewardInFlight || !roomId) return;
+        rewardInFlight = true;
+        const ref = roomRef(roomId);
+        const uid = currentUser.uid;
+        try {
+            const paid = await db.runTransaction(async (tx) => {
+                const snap = await tx.get(ref);
+                if (!snap.exists) return false;
+                const d = snap.data();
+                if (d.status !== 'finished' || d.winner === uid || d.losePenaltyApplied) return false;
+                if (d.endReason !== 'three' && d.moves.length < REWARD_MIN_MOVES) return false;
+                tx.update(ref, { losePenaltyApplied: true });
+                return true;
+            });
+            if (paid) {
+                userData.coin -= LOSE_DEDUCTION;
+                if (userData.coin < 0) userData.coin = 0;
+                if (typeof updateTopMoney === 'function') updateTopMoney();
+                if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
+            }
+        } catch (e) {
+            rewardInFlight = false;
+            console.warn('패배 벌금 처리 실패:', e);
         }
     }
 
