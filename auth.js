@@ -19,6 +19,17 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// ===== 기기 ID 생성/저장 =====
+function getDeviceId() {
+    const key = 'milkyway_device_id';
+    let deviceId = localStorage.getItem(key);
+    if (!deviceId) {
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem(key, deviceId);
+    }
+    return deviceId;
+}
+
 // ===== 특정 계정 전용 칭호 자동 지급 =====
 // 아래 맵에 "이메일: [칭호id, ...]" 형태로 추가하면, 그 이메일로 로그인할 때
 // 해당 칭호들이 자동으로 소유 목록에 추가됩니다. (장착 여부는 유저가 설정에서 직접 선택)
@@ -26,7 +37,7 @@ const db = firebase.firestore();
 const SPECIAL_TITLE_GRANTS = {
     "pyhoo0215@example.com": ['creator', 'eternal_test_subject', 'alpha_tester'],                                  // 본인(개발자) 이메일로 교체하세요
     "umy35824@gmail.com": ['eternal_test_subject', 'alpha_tester']   // 동생 이메일로 교체하세요
-   ,"godtwinkle0215@gmail.com": ['alpha_tester']   // 동생 이메일로 교체하세요
+  ,"godtwinkle0215@gmail.com": ['alpha_tester']   // 동생 이메일로 교체하세요
 };
 
 let currentUser = null;
@@ -57,7 +68,9 @@ function buildDefaultUserData(nickname) {
         aboutMe: "자기소개를 적어보세요!",
         ddays: [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }],
         titles: ['newbie'],
-        equippedTitle: 'newbie'
+        equippedTitle: 'newbie',
+        ownedThemes: ['dark', 'light'],
+        deviceId: getDeviceId()
     };
 }
 
@@ -105,6 +118,20 @@ async function signUp() {
 
     try {
         setAuthSubmitting(true);
+        
+        // 기기 ID로 이미 가입된 계정이 있는지 확인
+        const deviceId = getDeviceId();
+        const existingQuery = await db.collection('users')
+            .where('deviceId', '==', deviceId)
+            .limit(1)
+            .get();
+        
+        if (!existingQuery.empty) {
+            errorBox.textContent = '이 기기에서는 이미 계정이 있습니다. 다른 기기에서 가입해주세요.';
+            setAuthSubmitting(false);
+            return;
+        }
+        
         const cred = await auth.createUserWithEmailAndPassword(email, password);
         currentUser = cred.user;
         const defaultData = buildDefaultUserData(nickname);
@@ -121,6 +148,7 @@ async function signUp() {
         userData.aboutMe = defaultData.aboutMe;
         userData.titles = defaultData.titles.slice();
         userData.equippedTitle = defaultData.equippedTitle;
+        userData.ownedThemes = defaultData.ownedThemes.slice();
         customDDays = defaultData.ddays;
         syncSpecialTitles();
         if (SPECIAL_TITLE_GRANTS[currentUser.email]) await saveUserDataToFirestore();
@@ -172,6 +200,7 @@ async function logIn() {
 
 // ===== 로그아웃 / 계정 전환 =====
 async function logOut() {
+    if (typeof stopRoomNotifier === 'function') stopRoomNotifier();
     await auth.signOut();
     currentUser = null;
     document.getElementById('main-app').style.display = 'none';
@@ -200,6 +229,7 @@ async function loadUserDataFromFirestore(uid) {
         userData.aboutMe = data.aboutMe || "자기소개를 적어보세요!";
         userData.titles = (data.titles && data.titles.length) ? data.titles : ['newbie'];
         userData.equippedTitle = data.equippedTitle || 'newbie';
+        userData.ownedThemes = (data.ownedThemes && data.ownedThemes.length) ? data.ownedThemes : ['dark', 'light'];
         customDDays = data.ddays || [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }];
     }
 }
@@ -220,6 +250,7 @@ async function saveUserDataToFirestore() {
             aboutMe: userData.aboutMe,
             titles: userData.titles,
             equippedTitle: userData.equippedTitle,
+            ownedThemes: userData.ownedThemes,
             ddays: customDDays
         }, { merge: true });
     } catch (err) {
@@ -272,6 +303,9 @@ function setAuthMode(mode) {
     const agreeRow = document.getElementById('auth-agree-row');
     agreeRow.style.display = isSignup ? 'flex' : 'none';
     document.getElementById('auth-agree-checkbox').checked = false;
+
+    const deviceNoticeRow = document.getElementById('auth-device-notice-row');
+    if (deviceNoticeRow) deviceNoticeRow.style.display = isSignup ? 'block' : 'none';
 }
 
 function openPrivacyModal() {
@@ -437,4 +471,6 @@ function enterMainApp() {
     document.getElementById('main-app').style.display = 'block';
     setTheme(userData.currentTheme || 'dark');
     loadPage('profile', document.querySelector('.nav-btn.active'));
+    if (typeof startRoomNotifier === 'function') startRoomNotifier();
+    if (typeof ensureLottoDrawn === 'function') ensureLottoDrawn();
 }
