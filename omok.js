@@ -14,6 +14,7 @@
     const LS_KEY = 'omokLastRoomId';
     const COLLECTION = 'omokRooms';
     const WIN_REWARD = 1000;                // 승리 보상 (코인만 지급, 랭크 포인트 X)
+    const LOSE_DEDUCTION = 500;             // 패배 벌금 (코인만 차감)
     const REWARD_MIN_MOVES = 10;            // 기권/시간초과 승리는 이 수 이상 둔 판에서만 보상 (0이면 항상 지급)
 
     // ----- 상태 -----
@@ -231,6 +232,7 @@
 
             const ref = db.collection(COLLECTION).doc();
             await ref.set({
+                game: 'omok',
                 status: 'waiting',
                 hostUid: currentUser.uid,
                 hostName: userData.name,
@@ -315,6 +317,7 @@
             if (room.status === 'finished') {
                 lsClear();
                 if (room.winner === uid && !room.rewarded) claimWinReward();
+                if (room.winner && room.winner !== uid && !room.losePenaltyApplied) claimLoseDeduction();
             }
             renderAll();
         }, (err) => {
@@ -388,7 +391,8 @@
                     : room.endReason === 'timeout' ? `${esc(loserName)}님이 시간 초과했어요.`
                         : `${esc(winnerName)}님이 오목을 완성했어요!`;
                 const rewardText = (iWon && room.rewarded) ? ` (+${WIN_REWARD.toLocaleString()}원)` : '';
-                html = `${why}<br><b>${iWon ? '🎉 승리하셨습니다!' + rewardText : '😢 패배했어요...'}</b>`;
+                const penaltyText = (!iWon && room.losePenaltyApplied) ? ` (-${LOSE_DEDUCTION.toLocaleString()}원)` : '';
+                html = `${why}<br><b>${iWon ? '🎉 승리하셨습니다!' + rewardText : '😢 패배했어요...' + penaltyText}</b>`;
             }
         }
         box.innerHTML = html;
@@ -451,6 +455,34 @@
         } catch (e) {
             rewardInFlight = false;
             console.warn('승리 보상 처리 실패:', e);
+        }
+    }
+
+    // 패배 벌금: 방 문서의 losePenaltyApplied 플래그를 트랜잭션으로 한 번만 true로 바꾼 사람만 코인을 깎임
+    async function claimLoseDeduction() {
+        if (rewardInFlight || !roomId) return;
+        rewardInFlight = true;
+        const ref = roomRef(roomId);
+        const uid = currentUser.uid;
+        try {
+            const paid = await db.runTransaction(async (tx) => {
+                const snap = await tx.get(ref);
+                if (!snap.exists) return false;
+                const d = snap.data();
+                if (d.status !== 'finished' || d.winner === uid || d.losePenaltyApplied) return false;
+                if (d.endReason !== 'five' && d.moves.length < REWARD_MIN_MOVES) return false;
+                tx.update(ref, { losePenaltyApplied: true });
+                return true;
+            });
+            if (paid) {
+                userData.coin -= LOSE_DEDUCTION;
+                if (userData.coin < 0) userData.coin = 0;
+                if (typeof updateTopMoney === 'function') updateTopMoney();
+                if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
+            }
+        } catch (e) {
+            rewardInFlight = false;
+            console.warn('패배 벌금 처리 실패:', e);
         }
     }
 
