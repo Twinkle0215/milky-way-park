@@ -14,14 +14,14 @@
 
     <canvas id="space-canvas"></canvas>
 
-    <div id="yt-player-container" style="position:fixed; top:0; left:0; width:0; height:0; overflow:hidden;">
+    <div id="yt-payer-container" style="position:fixed; top:0; left:0; width:0; height:0; overflow:hidden;">
         <div id="yt-player"></div>
     </div>
 
     <div id="intro-screen">
         <div class="intro-container" id="intro">
             <div class="sub-title">언제든지 놀러오세요!</div>
-            <div class="sub-title">⭐️Early Access⭐️</div>
+            <div class="sub-title">⭐️Open Alpha Test⭐️</div>
             <div class="kor-title">은하수 속 놀이터</div>
             <div class="main-eng-title">Milky Way Park</div>
             <button class="start-btn" onclick="startApp()">시작하기</button>
@@ -50,6 +50,10 @@
                     <span style="color:var(--text-color); font-weight:bold;">[필수]</span> 개인정보 수집·이용 및 해외 이전에 동의합니다.
                     <button type="button" onclick="openPrivacyModal()" style="background:none; border:none; color:var(--accent-color); text-decoration:underline; cursor:pointer; font-size:12px; padding:0; font-weight:bold;">전문 보기</button>
                 </label>
+            </div>
+
+            <div id="auth-device-notice-row" style="display:none; text-align:center; font-size:11px; color:var(--sub-text); margin:-4px 0 12px 0; padding:6px; background:rgba(100,100,100,0.15); border-radius:4px;">
+                💡 기기 하나당 계정 하나만 생성 가능합니다.
             </div>
 
             <p id="auth-error-msg" style="color:#ef5350; font-size:12px; margin:-8px 0 12px 0; min-height:14px;"></p>
@@ -240,6 +244,24 @@
             </div>
         </div>
 
+        <div id="lotto-modal" class="modal-overlay" style="z-index:3150;">
+            <div class="modal-box" style="text-align:left; max-height:85vh; overflow-y:auto;">
+                <h3 style="text-align:center;">🎰 은하수 로또</h3>
+                <p id="lotto-modal-sub" style="text-align:center; font-size:12px; color:var(--sub-text); margin-top:-6px;"></p>
+
+                <div style="display:flex; gap:6px; margin:12px 0;">
+                    <button id="lotto-tab-buy-btn" class="lotto-tab-btn" onclick="LottoUI.switchTab('buy')">번호 선택</button>
+                    <button id="lotto-tab-my-btn" class="lotto-tab-btn" onclick="LottoUI.switchTab('my')">내 로또함</button>
+                </div>
+
+                <div id="lotto-modal-body"></div>
+
+                <div class="modal-btns" style="margin-top:16px;">
+                    <button class="modal-btn btn-confirm" onclick="LottoUI.close()">닫기</button>
+                </div>
+            </div>
+        </div>
+
         <div id="theme-picker-modal" class="modal-overlay" style="z-index:3200;">
             <div class="modal-box" style="max-width:340px;">
                 <h3>테마 선택</h3>
@@ -304,5 +326,7 @@
     <script src="auth.js"></script>
   <script src="omok.js"></script>
 <script src="tictactoe.js"></script>
+<script src="notify.js"></script>
+<script src="lotto.js"></script>
 </body>
 </html>
