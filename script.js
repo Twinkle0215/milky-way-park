@@ -1582,4 +1582,4 @@ async function findBotWord(targetChar, altChar, forceFinish = false) {
     }
 
     return null;
-     }
+}
