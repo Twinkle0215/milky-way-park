@@ -70,7 +70,16 @@ function buildDefaultUserData(nickname) {
         titles: ['newbie'],
         equippedTitle: 'newbie',
         ownedThemes: ['dark', 'light'],
-        deviceId: getDeviceId()
+        deviceId: getDeviceId(),
+        gameStats: {
+            omokWins: 0,
+            omokLosses: 0,
+            tictactoeWins: 0,
+            tictactoeLosses: 0,
+            totalGamePoint: 0,
+            totalCoin: 0,
+            lastGameDate: null
+        }
     };
 }
 
@@ -224,12 +233,21 @@ async function loadUserDataFromFirestore(uid) {
         userData.point = data.point ?? 0;
         userData.avatarUrl = data.avatarUrl || null;
         userData.bannerUrl = data.bannerUrl || null;
-        userData.currentTheme = data.currentTheme || 'dark';
-        userData.customThemeBgUrl = data.customThemeBgUrl || null;
+        userData.currentTheme = data.currentTheme || localStorage.getItem('currentTheme') || 'dark';
+        userData.customThemeBgUrl = data.customThemeBgUrl || localStorage.getItem('customThemeBgUrl') || null;
         userData.aboutMe = data.aboutMe || "자기소개를 적어보세요!";
         userData.titles = (data.titles && data.titles.length) ? data.titles : ['newbie'];
         userData.equippedTitle = data.equippedTitle || 'newbie';
         userData.ownedThemes = (data.ownedThemes && data.ownedThemes.length) ? data.ownedThemes : ['dark', 'light'];
+        userData.gameStats = data.gameStats || {
+            omokWins: 0,
+            omokLosses: 0,
+            tictactoeWins: 0,
+            tictactoeLosses: 0,
+            totalGamePoint: 0,
+            totalCoin: 0,
+            lastGameDate: null
+        };
         customDDays = data.ddays || [{ id: 1, title: "🎄 크리스마스", date: "2026-12-25" }];
     }
 }
@@ -469,7 +487,20 @@ function proceedAfterIntro() {
 function enterMainApp() {
     document.body.style.overflow = 'auto';
     document.getElementById('main-app').style.display = 'block';
-    setTheme(userData.currentTheme || 'dark');
+    
+    // localStorage에서 먼저 확인하여 빠르게 복원
+    const savedTheme = localStorage.getItem('currentTheme');
+    const savedBgUrl = localStorage.getItem('customThemeBgUrl');
+    
+    if (savedTheme && savedTheme !== 'custom-image') {
+        setTheme(savedTheme);
+    } else if (savedTheme === 'custom-image' && savedBgUrl) {
+        userData.customThemeBgUrl = savedBgUrl;
+        setTheme('custom-image');
+    } else {
+        setTheme(userData.currentTheme || 'dark');
+    }
+    
     loadPage('profile', document.querySelector('.nav-btn.active'));
     if (typeof startRoomNotifier === 'function') startRoomNotifier();
     if (typeof ensureLottoDrawn === 'function') ensureLottoDrawn();
