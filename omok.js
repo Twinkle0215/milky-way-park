@@ -142,7 +142,7 @@
                 const myUid = currentUser ? currentUser.uid : null;
                 list.innerHTML = rooms.map(({ id, d }) => `
                     <div class="dday-item">
-                        <div class="dday-info"><span class="dday-title">${esc(d.hostName)}님의 방${d.hostUid === myUid ? ' (내 방)' : ''}</span></div>
+                        <div class="dday-info"><span class="dday-title">${esc(d.hostName)}님의 방 ${d.isRanking ? '<span style="color:var(--accent-color); font-weight:bold; margin-left:6px;">[랭킹]</span>' : ''}${d.hostUid === myUid ? ' (내 방)' : ''}</span></div>
                         <div class="dday-actions"><button class="add-dday-btn" onclick="Omok.join('${id}')">입장</button></div>
                     </div>`).join('');
             }, (err) => {
@@ -225,14 +225,81 @@
     // =====================================================
     async function createRoom() {
         if (!requireLogin() || lobbyBusy) return;
-        lobbyBusy = true; // 연타해도 방이 여러 개 생기지 않게 막음
+        
+        // 랭킹 여부 선택 모달 띄우기
+        showRankingModeSelect('omok');
+    }
+
+    function showRankingModeSelect(game) {
+        const modal = document.createElement('div');
+        modal.id = 'omok-mode-select-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+
+        modal.innerHTML = `
+            <div style="background: var(--bg-color); border-radius: 16px; padding: 24px; max-width: 300px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+                <div style="font-size: 16px; font-weight: bold; margin-bottom: 20px;">게임 모드 선택</div>
+                
+                <button onclick="Omok.selectMode(true, '${game}')" style="
+                    width: 100%;
+                    padding: 12px;
+                    margin-bottom: 10px;
+                    background: var(--accent-color);
+                    border: none;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: bold;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">🏆 랭킹 모드 (포인트 획득)</button>
+                
+                <button onclick="Omok.selectMode(false, '${game}')" style="
+                    width: 100%;
+                    padding: 12px;
+                    background: rgba(255,255,255,0.1);
+                    border: none;
+                    border-radius: 8px;
+                    color: var(--text-color);
+                    font-weight: bold;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">🎮 일반 모드 (코인만)</button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    function selectMode(isRanking, game) {
+        const modal = document.getElementById('omok-mode-select-modal');
+        if (modal) modal.remove();
+        createRoomWithMode(isRanking, game);
+    }
+
+    async function createRoomWithMode(isRanking, game) {
+        if (lobbyBusy) return;
+        lobbyBusy = true;
+        
         try {
             const mine = await findMyActiveRooms();
-            if (mine.length) { goToExisting(mine[0]); return; }
+            if (mine.length) { 
+                goToExisting(mine[0]); 
+                return; 
+            }
 
             const ref = db.collection(COLLECTION).doc();
             await ref.set({
-                game: 'omok',
+                game: game,
                 status: 'waiting',
                 hostUid: currentUser.uid,
                 hostName: userData.name,
@@ -242,7 +309,8 @@
                 winner: null,
                 endReason: null,
                 createdAt: nowTs(),
-                lastMoveAt: nowTs()
+                lastMoveAt: nowTs(),
+                isRanking: isRanking
             });
             enterRoom(ref.id);
         } catch (e) {
@@ -451,6 +519,10 @@
                 userData.coin += WIN_REWARD;
                 if (typeof updateTopMoney === 'function') updateTopMoney();
                 if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
+                // 랭킹 모드면 포인트 기록
+                if (room && room.isRanking && typeof recordGameResult === 'function') {
+                    recordGameResult('omok', true);
+                }
             }
         } catch (e) {
             rewardInFlight = false;
@@ -479,6 +551,10 @@
                 if (userData.coin < 0) userData.coin = 0;
                 if (typeof updateTopMoney === 'function') updateTopMoney();
                 if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
+                // 랭킹 모드면 포인트 기록
+                if (room && room.isRanking && typeof recordGameResult === 'function') {
+                    recordGameResult('omok', false);
+                }
             }
         } catch (e) {
             rewardInFlight = false;
@@ -753,6 +829,7 @@
     window.Omok = {
         open: openLobby,
         create: createRoom,
+        selectMode: selectMode,
         join: joinRoom,
         resume: enterRoom,
         resumeAny: openRoom,
@@ -762,4 +839,3 @@
         teardown: teardown
     };
 })();
-
