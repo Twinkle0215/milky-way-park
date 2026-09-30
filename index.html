@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Noto+Sans+KR:wght@300;500;700&display=swap" rel="stylesheet">
-    <link rel"stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -118,7 +118,9 @@
 
     <div id="main-app">
         <div class="top-navbar">
-            <a href="javascript:openLegalNoticeModal()" style="font-size: 12px; color: #888; text-decoration: underline; cursor: pointer; margin-right: auto; white-space: nowrap;">법적 고지</a>
+            <div style="flex: 1; display: flex; align-items: center;">
+                <a href="javascript:openLegalNoticeModal()" style="font-size: 12px; color: #888; text-decoration: underline; cursor: pointer;">법적 고지</a>
+            </div>
             <div class="money-badge">
                 <i class="fa-solid fa-coins"></i>
                 <span id="top-coin-display">0원</span>
