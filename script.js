@@ -695,6 +695,20 @@ function setTheme(themeName) {
     } else {
         document.body.style.background = '#030308';
     }
+    
+    // localStorage에 저장 (페이지 재로드 시 빠르게 복원하기 위함)
+    try {
+        localStorage.setItem('currentTheme', themeName);
+        if (themeName === 'custom-image' && userData.customThemeBgUrl) {
+            localStorage.setItem('customThemeBgUrl', userData.customThemeBgUrl);
+        } else {
+            // 커스텀 이미지가 아니면 저장된 이미지 제거
+            localStorage.removeItem('customThemeBgUrl');
+        }
+    } catch (e) {
+        console.warn('localStorage 저장 실패:', e);
+    }
+    
     if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
 }
 
@@ -903,8 +917,11 @@ function loadPage(page, btn) {
                             <h2>${userData.name}</h2>
                             <button class="edit-name-btn" onclick="openModal()"><i class="fa-solid fa-pen"></i></button>
                         </div>
-                        <span class="badge"><i class="fa-solid fa-trophy" style="font-size:10px; margin-right:4px;"></i>${userData.rank}</span>
-                        ${renderEquippedTitleBadge()}
+                        <div style="display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                            <span class="badge"><i class="fa-solid fa-coins" style="font-size:10px; margin-right:3px;"></i><span id="coin-rank-display">로딩중</span></span>
+                            <span class="badge" id="tier-badge-display" onclick="openRankInfoModal()" style="cursor:pointer;">⚙️ 로딩중</span>
+                            <span id="equipped-title-badge"></span>
+                        </div>
                     </div>
                     <div class="about-me-box">
                         <div class="about-me-header">
@@ -947,6 +964,7 @@ function loadPage(page, btn) {
                 </div>
             </div>`;
         renderDDays();
+        loadUserCoinRankAndTier();
     } else if (page === 'quest') {
         content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-scroll"></i><h2>퀘스트 시스템 업데이트 예정</h2><p>일일 퀘스트, 도전 과제 및 보상 기능이 추가될 예정입니다.</p></div>`;
     } else if (page === 'game') {
@@ -991,7 +1009,7 @@ function loadPage(page, btn) {
                 </div>
             </div>`;
     } else if (page === 'rank') {
-        content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-trophy"></i><h2>랭킹 시스템 업데이트 예정</h2><p>준비 중입니다.</p></div>`;
+        renderRankingPage();
     } else if (page === 'shop') {
         content.innerHTML = `
             <div class="card" style="text-align:left;">
@@ -1083,6 +1101,60 @@ function renderDDays() {
     container.innerHTML = html;
 }
 
+async function loadUserCoinRankAndTier() {
+    try {
+        // 코인 랭킹에서 사용자의 순위 찾기
+        const snapshot = await db.collection('users').orderBy('coin', 'desc').limit(50).get();
+        let coinRank = 0;
+        
+        snapshot.forEach((doc, index) => {
+            if (doc.id === currentUser.uid) {
+                coinRank = index + 1;
+            }
+        });
+
+        // 코인 랭킹 순위 표시
+        const coinRankDisplay = document.getElementById('coin-rank-display');
+        if (coinRankDisplay) {
+            if (coinRank > 0) {
+                coinRankDisplay.textContent = `#${coinRank}`;
+            } else {
+                coinRankDisplay.textContent = '순위없음';
+            }
+        }
+
+        // 현재 등급 표시
+        if (typeof calculateTier === 'function' && userData.gameStats) {
+            const gameStats = userData.gameStats || {};
+            const stats = getGameStats ? getGameStats(gameStats) : { totalGamePoint: 0 };
+            const tier = calculateTier(stats.totalGamePoint);
+            
+            const tierBadge = document.getElementById('tier-badge-display');
+            if (tierBadge) {
+                const iconHTML = (typeof getTierIconHTML === 'function') ? getTierIconHTML(tier.key, 14) : tier.emoji;
+                tierBadge.innerHTML = `${iconHTML} ${tier.tier}`;
+                tierBadge.className = 'badge';
+                tierBadge.style.display = 'inline-flex';
+                tierBadge.style.alignItems = 'center';
+                tierBadge.style.gap = '4px';
+            }
+        }
+
+        // 칭호 표시
+        const titleBadge = document.getElementById('equipped-title-badge');
+        if (titleBadge) {
+            const titleHTML = renderEquippedTitleBadge();
+            titleBadge.innerHTML = titleHTML;
+        }
+    } catch (error) {
+        console.error('코인 랭킹 로드 실패:', error);
+        const coinRankDisplay = document.getElementById('coin-rank-display');
+        if (coinRankDisplay) {
+            coinRankDisplay.textContent = '로드실패';
+        }
+    }
+}
+
 function openDeleteModal(id) {
     deletingDDayId = id;
     document.getElementById('delete-modal').style.display = 'flex';
@@ -1103,6 +1175,57 @@ function confirmDeleteDDay() {
 }
 
 function openModal() { document.getElementById('modal').style.display = 'flex'; }
+
+function openLegalNoticeModal() {
+    const modal = document.createElement('div');
+    modal.id = 'legal-notice-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        overflow-y: auto;
+    `;
+
+    modal.innerHTML = `
+        <div style="background: var(--bg-color); border-radius: 16px; max-width: 500px; width: 90%; margin: 20px auto; padding: 24px; position: relative;">
+            <button onclick="document.getElementById('legal-notice-modal').remove()" style="position: absolute; top: 12px; right: 12px; background: none; border: none; color: var(--text-color); font-size: 24px; cursor: pointer; padding: 0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">×</button>
+            
+            <h2 style="margin-top: 0; font-size: 16px; font-weight: bold; margin-bottom: 16px;">법적 고지</h2>
+            
+            <div style="font-size: 12px; line-height: 1.6; color: var(--text-color); max-height: 70vh; overflow-y: auto;">
+                <p><strong>면책 조항 (Terms of Disclaimer)</strong></p>
+                
+                <p>본 웹사이트("은하수 속 놀이터(Milky Way Park)")의 모든 서비스, 기능, 콘텐츠 이용에 따른 결과에 대해 사용자가 전적인 책임을 집니다.</p>
+                
+                <p><strong>사용자 책임</strong><br>
+                • 본 사이트 이용 중 발생한 모든 손해, 손실, 피해에 대해 사용자가 책임집니다.<br>
+                • 게임 결과, 포인트 변동, 코인 거래 등 모든 결과에 대해 사용자가 책임집니다.<br>
+                • 계정 보안, 비밀번호 관리 등의 책임은 사용자에게 있습니다.<br>
+                • 부정행위, 규칙 위반으로 인한 모든 결과에 대해 사용자가 책임집니다.</p>
+                
+                <p><strong>면책사항</strong><br>
+                • 본 사이트는 명시되지 않은 어떠한 보증도 제공하지 않습니다.<br>
+                • 서비스 중단, 오류, 버그로 인한 손해에 대해 책임지지 않습니다.<br>
+                • 데이터 손실, 계정 해킹 등의 사고에 대해 책임지지 않습니다.</p>
+                
+                <p><strong>약관 동의</strong><br>
+                본 사이트를 이용함으로써, 사용자는 위의 모든 조항에 동의하는 것으로 간주됩니다.</p>
+            </div>
+
+            <button onclick="document.getElementById('legal-notice-modal').remove()" style="width: 100%; padding: 12px; margin-top: 16px; background: var(--accent-color); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 14px;">확인</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
 function saveName() {
     const input = document.getElementById('name-input').value.trim();
@@ -1459,4 +1582,4 @@ async function findBotWord(targetChar, altChar, forceFinish = false) {
     }
 
     return null;
-}
+     }
