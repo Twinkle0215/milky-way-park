@@ -491,8 +491,17 @@
                 const why = room.endReason === 'resign' ? `${esc(loserName)}님이 기권했어요.`
                     : room.endReason === 'timeout' ? `${esc(loserName)}님이 시간 초과했어요.`
                         : `${esc(winnerName)}님이 3목을 완성했어요!`;
-                const rewardText = (iWon && room.rewarded) ? ` (+${WIN_REWARD.toLocaleString()}원)` : '';
-                const penaltyText = (!iWon && room.losePenaltyApplied) ? ` (-${LOSE_DEDUCTION.toLocaleString()}원)` : '';
+                
+                // 랭킹 모드/일반 모드에 따라 다르게 표시
+                let rewardText = '';
+                let penaltyText = '';
+                if (room.isRanking) {
+                    rewardText = (iWon && room.rewarded) ? ` (+100P)` : '';
+                    penaltyText = (!iWon && room.losePenaltyApplied) ? ` (-70P)` : '';
+                } else {
+                    rewardText = (iWon && room.rewarded) ? ` (+${WIN_REWARD.toLocaleString()}원)` : '';
+                    penaltyText = (!iWon && room.losePenaltyApplied) ? ` (-${LOSE_DEDUCTION.toLocaleString()}원)` : '';
+                }
                 html = `${why}<br><b>${iWon ? '🎉 승리하셨습니다!' + rewardText : '😢 패배했어요...' + penaltyText}</b>`;
             }
         }
