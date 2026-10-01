@@ -525,7 +525,7 @@
                 return true;
             });
             if (paid) {
-                userData.coin += WIN_REWARD;
+                if (!(room && room.isRanking)) userData.coin += WIN_REWARD;
                 if (typeof updateTopMoney === 'function') updateTopMoney();
                 if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
                 // 랭킹 모드면 포인트 기록
@@ -556,8 +556,10 @@
                 return true;
             });
             if (paid) {
-                userData.coin -= LOSE_DEDUCTION;
-                if (userData.coin < 0) userData.coin = 0;
+                if (!(room && room.isRanking)) {
+                    userData.coin -= LOSE_DEDUCTION;
+                    if (userData.coin < 0) userData.coin = 0;
+                }
                 if (typeof updateTopMoney === 'function') updateTopMoney();
                 if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
                 // 랭킹 모드면 포인트 기록
