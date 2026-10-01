@@ -98,24 +98,20 @@ async function recordGameResult(gameType, isWin, opponent = null) {
             if (isWin) {
                 userData.gameStats.omokWins = (userData.gameStats.omokWins || 0) + 1;
                 userData.gameStats.totalGamePoint = (userData.gameStats.totalGamePoint || 0) + GAME_REWARDS.WIN;
-                userData.coin = (userData.coin || 0) + COIN_REWARDS.WIN;
                 updates['gameStats.omokWins'] = firebase.firestore.FieldValue.increment(1);
             } else {
                 userData.gameStats.omokLosses = (userData.gameStats.omokLosses || 0) + 1;
                 userData.gameStats.totalGamePoint = (userData.gameStats.totalGamePoint || 0) + GAME_REWARDS.LOSS;
-                userData.coin = (userData.coin || 0) - COIN_REWARDS.LOSS;
                 updates['gameStats.omokLosses'] = firebase.firestore.FieldValue.increment(1);
             }
         } else if (gameType === 'tictactoe') {
             if (isWin) {
                 userData.gameStats.tictactoeWins = (userData.gameStats.tictactoeWins || 0) + 1;
                 userData.gameStats.totalGamePoint = (userData.gameStats.totalGamePoint || 0) + GAME_REWARDS.WIN;
-                userData.coin = (userData.coin || 0) + COIN_REWARDS.WIN;
                 updates['gameStats.tictactoeWins'] = firebase.firestore.FieldValue.increment(1);
             } else {
                 userData.gameStats.tictactoeLosses = (userData.gameStats.tictactoeLosses || 0) + 1;
                 userData.gameStats.totalGamePoint = (userData.gameStats.totalGamePoint || 0) + GAME_REWARDS.LOSS;
-                userData.coin = (userData.coin || 0) - COIN_REWARDS.LOSS;
                 updates['gameStats.tictactoeLosses'] = firebase.firestore.FieldValue.increment(1);
             }
         }
