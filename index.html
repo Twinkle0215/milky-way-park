@@ -249,12 +249,13 @@
 
         <div id="lotto-modal" class="modal-overlay" style="z-index:3150;">
             <div class="modal-box" style="text-align:left; max-height:85vh; overflow-y:auto;">
-                <h3 style="text-align:center;">🎰 은하수 로또</h3>
+                <h3 style="text-align:center;"><i class="fa-solid fa-ticket" style="color:#fbbf24;"></i> 은하수 로또</h3>
                 <p id="lotto-modal-sub" style="text-align:center; font-size:12px; color:var(--sub-text); margin-top:-6px;"></p>
 
                 <div style="display:flex; gap:6px; margin:12px 0;">
                     <button id="lotto-tab-buy-btn" class="lotto-tab-btn" onclick="LottoUI.switchTab('buy')">번호 선택</button>
                     <button id="lotto-tab-my-btn" class="lotto-tab-btn" onclick="LottoUI.switchTab('my')">내 로또함</button>
+                    <button id="lotto-tab-history-btn" class="lotto-tab-btn" onclick="LottoUI.switchTab('history')">기록</button>
                 </div>
 
                 <div id="lotto-modal-body"></div>
@@ -331,6 +332,7 @@
 <script src="tictactoe.js"></script>
 <script src="notify.js"></script>
 <script src="lotto.js"></script>
+<script src="flappy.js"></script>
 <script src="ranking-system.js"></script>
 <script src="ranking-ui.js"></script>
 </body>
