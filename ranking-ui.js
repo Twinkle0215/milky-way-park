@@ -265,25 +265,25 @@ function renderRankingList(rankings, type) {
         }
 
         html += `
-            <div class="ranking-item" style="background:${bgColor}; border-left:4px solid ${borderColor}; ${isCurrentUser ? 'border:2px solid var(--accent-color);' : ''} padding:12px; border-radius:6px; margin-bottom:8px; display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="openRankingUserProfile('${user.uid}')">
+            <div class="ranking-item" style="background:${bgColor}; border-left:4px solid ${borderColor}; ${isCurrentUser ? 'border:2px solid var(--accent-color);' : ''} padding:12px; border-radius:6px; margin-bottom:8px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; cursor:pointer; box-sizing:border-box; max-width:100%;" onclick="openRankingUserProfile('${user.uid}')">
                 <!-- 순위 -->
                 <div style="font-size:18px; font-weight:bold; min-width:40px; text-align:center;">
                     ${medalEmoji}
                 </div>
 
                 <!-- 프로필 -->
-                <div style="display:flex; align-items:center; gap:8px; flex:1;">
+                <div style="display:flex; align-items:center; gap:8px; flex:1 1 0; min-width:0;">
                     <div style="width:36px; height:36px; border-radius:50%; background:rgba(100,150,200,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                         ${user.avatarUrl ? `<img src="${user.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '<i class="fa-solid fa-user"></i>'}
                     </div>
-                    <div>
-                        <div style="font-weight:bold; font-size:13px;">${user.name} ${isCurrentUser ? '(나)' : ''}</div>
+                    <div style="min-width:0;">
+                        <div style="font-weight:bold; font-size:13px; overflow-wrap:anywhere;">${user.name} ${isCurrentUser ? '(나)' : ''}</div>
                         <div style="font-size:11px; color:var(--sub-text); display:flex; align-items:center; gap:4px;">${getTierIconHTML(user.tierKey, 14)} ${user.tier}</div>
                     </div>
                 </div>
 
                 <!-- 통계 -->
-                <div style="display:flex; gap:12px; align-items:center; flex-shrink:0;">
+                <div style="${type === 'game' ? 'display:flex; flex:1 1 100%; justify-content:space-around; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);' : 'display:flex; gap:12px; align-items:center; flex-shrink:0;'}">
                     ${statDisplay}
                 </div>
             </div>
@@ -442,7 +442,7 @@ const rankingStyles = `
 
 .ranking-stat {
     text-align: center;
-    min-width: 60px;
+    min-width: 0;
 }
 
 .user-rank-info {
