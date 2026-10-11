@@ -975,15 +975,23 @@ function loadPage(page, btn) {
                 
                 <div class="game-grid">
                     <div class="game-card" onclick="startWordChainGame()">
-                        <div class="game-icon">🗣️</div>
+                        <div class="game-icon-badge" style="--ib1:#6366f1; --ib2:#8b5cf6;"><i class="fa-solid fa-comment-dots"></i></div>
                         <div>
                             <div class="game-title">끝말잇기</div>
                             <div class="game-desc">30초 제한! 국어사전 봇과 대결!</div>
                         </div>
                         <button class="game-play-btn">플레이</button>
                     </div>
+                    <div class="game-card" onclick="FlappyUI.open()">
+                        <div class="game-icon-badge" style="--ib1:#38bdf8; --ib2:#0284c7;"><i class="fa-solid fa-dove"></i></div>
+                        <div>
+                            <div class="game-title">플라피 버드</div>
+                            <div class="game-desc">가시 기둥 하나 통과할 때마다 10코인!</div>
+                        </div>
+                        <button class="game-play-btn">플레이</button>
+                    </div>
                     <div class="game-card" style="opacity: 0.6; cursor: default;">
-                        <div class="game-icon">📈</div>
+                        <div class="game-icon-badge" style="--ib1:#22c55e; --ib2:#15803d;"><i class="fa-solid fa-chart-line"></i></div>
                         <div>
                             <div class="game-title">은하수 주식</div>
                             <div class="game-desc">코인 투자 시뮬레이션</div>
@@ -991,7 +999,7 @@ function loadPage(page, btn) {
                         <button class="game-play-btn" style="background:#555;">준비중</button>
                     </div>
                     <div class="game-card" style="opacity: 0.6; cursor: default;">
-                        <div class="game-icon">🎣</div>
+                        <div class="game-icon-badge" style="--ib1:#14b8a6; --ib2:#0f766e;"><i class="fa-solid fa-fish"></i></div>
                         <div>
                             <div class="game-title">낚시왕</div>
                             <div class="game-desc">물고기 잡아보세요!</div>
@@ -999,7 +1007,7 @@ function loadPage(page, btn) {
                         <button class="game-play-btn" style="background:#555;">준비중</button>
                     </div>
                     <div class="game-card" style="opacity: 0.6; cursor: default;">
-                        <div class="game-icon">⚔️</div>
+                        <div class="game-icon-badge" style="--ib1:#f43f5e; --ib2:#be123c;"><i class="fa-solid fa-hammer"></i></div>
                         <div>
                             <div class="game-title">무기 강화</div>
                             <div class="game-desc">극한의 확률 강화!</div>
@@ -1016,7 +1024,7 @@ function loadPage(page, btn) {
                 <h2 style="margin-top:0; font-size:18px;"><i class="fa-solid fa-store" style="color:var(--accent-color);"></i> 은하수 상점</h2>
                 <div class="game-grid">
                     <div class="game-card" onclick="LottoUI.open()">
-                        <div class="game-icon">🎰</div>
+                        <div class="game-icon-badge" style="--ib1:#fbbf24; --ib2:#d97706;"><i class="fa-solid fa-ticket"></i></div>
                         <div>
                             <div class="game-title">은하수 로또</div>
                             <div class="game-desc">1,000원 · 매주 토요일 추첨</div>
@@ -1304,12 +1312,19 @@ const koreanDictionary = [
     "함박눈", "눈사람", "람다", "다람쥐", "쥐포", "포도주", "주스", "스낵"
 ];
 
-const fatalEndChars = ['륨', '늄', '슘', '튬', '녘'];
+const fatalEndChars = ['륨', '늄', '슘', '튬', '듐', '븀', '뮴', '녘', '즘'];
 const fatalWords = [
-    "헬륨", "나트륨", "칼륨", "바륨", "리튬", "프로메튬",
-    "우라늄", "알루미늄", "티타늄",
-    "마그네슘", "칼슘", "세슘",
-    "초저녁", "새벽녘", "해질녘", "저물녘", "아침녘", "황혼녘"
+    // -륨 / -늄 / -슘 / -튬 / -듐 / -븀 / -뮴 (원소 이름)
+    "헬륨", "나트륨", "칼륨", "바륨", "갈륨", "탈륨", "큐륨", "이트륨", "베릴륨", "탄탈륨", "툴륨", "사마륨",
+    "우라늄", "알루미늄", "티타늄", "게르마늄", "셀레늄", "폴로늄", "플루토늄", "지르코늄", "하프늄",
+    "마그네슘", "칼슘", "세슘", "프랑슘", "아메리슘",
+    "리튬", "스트론튬", "테크네튬",
+    "라듐", "팔라듐", "이리듐", "루비듐", "로듐", "스칸듐", "네오디뮴",
+    "카드뮴", "오스뮴", "이터븀", "에르븀", "니오븀",
+    // -녘
+    "초저녁", "새벽녘", "해질녘", "저물녘", "아침녘", "황혼녘", "동틀녘", "해뜰녘",
+    // -즘
+    "알고리즘", "메커니즘", "나르시시즘", "휴머니즘", "사디즘", "마조히즘", "내셔널리즘", "아마추어리즘"
 ];
 koreanDictionary.push(...fatalWords);
 
@@ -1324,43 +1339,85 @@ function fetchWithTimeout(url, timeoutMs) {
     return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
+let lastApiError = "";
+let apiWarned = false;
+// true로 바꾸면: 사전 확인이 안 될 때 내장 사전에 없는 단어는 전부 거절
+const STRICT_WHEN_API_DOWN = false;
+
+// 사전 API 사용 여부: 키/접속 문제가 있으면 false (대기 없이 words.txt만 사용)
+const USE_API = false;
+
 async function fetchWithCorsFallback(targetUrl) {
-    try {
-        const res = await fetchWithTimeout(targetUrl, 700);
-        if (res.ok) return await res.json();
-    } catch (e) { }
-
-    try {
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-        const res2 = await fetchWithTimeout(proxyUrl, 1200);
-        if (res2.ok) return await res2.json();
-    } catch (e) { }
-
+    if (!USE_API) return null;
+    const attempts = [
+        [targetUrl, 800],
+        [`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`, 1500],
+        [`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`, 1500]
+    ];
+    for (const [url, ms] of attempts) {
+        try {
+            const res = await fetchWithTimeout(url, ms);
+            if (res.ok) {
+                const text = await res.text();
+                try {
+                    const json = JSON.parse(text);
+                    if (json && json.error) {   // 키 오류 등 API가 돌려준 에러
+                        lastApiError = `${json.error.error_code || ''} ${json.error.message || ''}`.trim();
+                        console.error("[끝말잇기] 사전 API 에러:", json.error);
+                        return null;
+                    }
+                    lastApiError = "";
+                    return json;
+                } catch (e) {
+                    lastApiError = "응답이 JSON이 아님(프록시/키 문제 가능)";
+                    console.warn("[끝말잇기] JSON 아님:", text.slice(0, 120));
+                }
+            }
+        } catch (e) { }
+    }
+    console.warn("[끝말잇기] 사전 API 접속 실패 (직접/프록시 모두)");
     return null;
 }
 
 function applyDueum(char) {
     const code = char.charCodeAt(0) - 0xAC00;
-    if (code < 0 || code > 11172) return char;
+    if (code < 0 || code >= 11172) return char;
 
     const initial = Math.floor(code / 588);
     const medial = Math.floor((code % 588) / 28);
     const final = code % 28;
 
-    if (initial === 2 && [2, 3, 4, 12, 17, 18, 20].includes(medial)) {
+    // ㅑ ㅒ ㅕ ㅖ ㅛ ㅠ ㅣ
+    const isY = [2, 3, 6, 7, 12, 17, 20].includes(medial);
+
+    if (initial === 2 && isY) {            // ㄴ → ㅇ (녀→여, 뉴→유, 니→이)
         return String.fromCharCode(0xAC00 + (11 * 588) + (medial * 28) + final);
     }
-    if (initial === 5) {
-        if ([2, 3, 4, 12, 17, 18, 20].includes(medial)) {
-            return String.fromCharCode(0xAC00 + (11 * 588) + (medial * 28) + final);
-        } else {
-            return String.fromCharCode(0xAC00 + (2 * 588) + (medial * 28) + final);
-        }
+    if (initial === 5) {                   // ㄹ
+        const newInitial = isY ? 11 : 2;   // 량→양, 리→이 / 라→나, 로→노
+        return String.fromCharCode(0xAC00 + (newInitial * 588) + (medial * 28) + final);
     }
     return char;
 }
 
+// 이어질 수 있는 시작 글자 전부 (원래 글자 + 두음법칙 + 역두음)
+function candidateStarts(char) {
+    const set = new Set([char, applyDueum(char)]);
+    const code = char.charCodeAt(0) - 0xAC00;
+    if (code >= 0 && code < 11172) {
+        const initial = Math.floor(code / 588);
+        const medial = Math.floor((code % 588) / 28);
+        const final = code % 28;
+        const isY = [2, 3, 6, 7, 12, 17, 20].includes(medial);
+        const make = ini => String.fromCharCode(0xAC00 + ini * 588 + medial * 28 + final);
+        if (initial === 11 && isY) { set.add(make(2)); set.add(make(5)); }   // 여 → 녀, 려
+        else if (initial === 2 && !isY) { set.add(make(5)); }               // 나 → 라
+    }
+    return [...set];
+}
+
 function startWordChainGame() {
+    loadWordList();
     isGameActive = true;
     wordHistory = [];
     botTurnCount = 0;
@@ -1463,6 +1520,65 @@ function addBubble(text, sender) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// ===== 내장 단어 목록 (words.txt) : API 없이 검증 + 봇이 사용 =====
+let wordSet = null, wordsByStart = null, startCount = null, wordListPromise = null;
+
+function loadWordList() {
+    if (wordListPromise) return wordListPromise;
+    wordListPromise = fetch('words.txt')
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(text => {
+            const set = new Set(), byStart = new Map(), count = new Map();
+            for (const line of text.split('\n')) {
+                const w = line.trim();
+                if (w.length < 2 || !/^[가-힣]+$/.test(w) || set.has(w)) continue;
+                set.add(w);
+                if (!byStart.has(w[0])) byStart.set(w[0], []);
+                byStart.get(w[0]).push(w);
+            }
+            for (const [c, arr] of byStart) count.set(c, arr.length);
+            wordSet = set; wordsByStart = byStart; startCount = count;
+            console.log(`[끝말잇기] 단어 ${set.size}개 로드 완료`);
+        })
+        .catch(e => console.warn('[끝말잇기] words.txt 로드 실패 → API 방식 사용', e));
+    return wordListPromise;
+}
+
+// 사전 없이도 명백히 가짜인 단어 거르기 (디디디디, ㅋㅋㅋ, ㅁㄴㅇㄹ 등)
+function looksFake(word, apiDown) {
+    if (/[ㄱ-ㅎㅏ-ㅣ]/.test(word)) return true;          // 자음/모음만 있는 글자
+    if (/[^가-힣]/.test(word)) return true;               // 한글 외 문자
+    if (/(.)\1{2,}/.test(word)) return true;              // 같은 글자 3번 이상 연속
+    if (apiDown && word.length >= 2 && new Set(word).size === 1) return true; // 붕붕 같은 같은 글자 반복
+    return false;
+}
+
+// 단어가 사전에 있는지 확인: true(있음) / false(없음) / null(확인 실패)
+async function checkWordExists(word) {
+    await loadWordList();
+    if (koreanDictionary.includes(word) || wordHistory.includes(word)) return true;
+    if (looksFake(word, false)) return false;
+    if (wordSet && wordSet.has(word)) return true;    // 목록에 있으면 바로 통과 (목록에 없으면 API로 한 번 더 확인)
+    const url = `https://opendict.korean.go.kr/api/search?key=${SAM_API_KEY}&req_type=json&q=${encodeURIComponent(word)}&part=word&method=exact&num=100`;
+    const data = await fetchWithCorsFallback(url);
+    if (!data || !data.channel) {                      // API 접근 실패 → 가짜 패턴만 거름
+        console.warn("[끝말잇기] 사전 확인 불가:", word);
+        if (!apiWarned && !wordSet) {
+            apiWarned = true;
+            addBubble(`⚠️ 사전 서버에 연결하지 못해 단어 검증이 제한돼요.${lastApiError ? `<br><small>원인: ${lastApiError}</small>` : ''}`, "system");
+        }
+        if (STRICT_WHEN_API_DOWN) return false;
+        return looksFake(word, true) ? false : null;
+    }
+    if (looksFake(word, false)) return false;
+    let items = data.channel.item || [];
+    if (!Array.isArray(items)) items = [items];
+    return items.some(it =>
+        it.word && it.word.replace(/[^가-힣]/g, '') === word &&
+        (!it.pos || it.pos.includes('명사'))          // 끝말잇기는 명사만 인정
+    );
+}
+
 async function submitWord() {
     if (!isGameActive) return;
 
@@ -1484,8 +1600,9 @@ async function submitWord() {
         return;
     }
 
-    if (firstChar !== lastChar && firstChar !== altLastChar) {
-        addBubble(`⚠️ <b>'${lastChar}'</b>${lastChar !== altLastChar ? `(또는 '<b>${altLastChar}</b>')` : ''}(으)로 시작하는 단어여야 합니다!`, "system");
+    const allowedStarts = candidateStarts(lastChar);
+    if (!allowedStarts.includes(firstChar)) {
+        addBubble(`⚠️ <b>'${allowedStarts.join("' / '")}'</b>(으)로 시작하는 단어여야 합니다!`, "system");
         startWordTimer(); // 타이머 재개
         return;
     }
@@ -1493,6 +1610,14 @@ async function submitWord() {
     if (wordHistory.includes(userWord)) {
         addBubble(`⚠️ <b>"${userWord}"</b>은(는) 이미 사용된 단어입니다!`, "system");
         startWordTimer(); // 타이머 재개
+        return;
+    }
+
+    // 사전 검사 (API 접근이 안 될 때는 억울하게 막지 않도록 통과)
+    const exists = await checkWordExists(userWord);
+    if (exists === false) {
+        addBubble(`⚠️ <b>"${userWord}"</b>은(는) 사전에 없는 단어예요! 다른 단어를 입력해주세요.`, "system");
+        startWordTimer();
         return;
     }
 
@@ -1509,8 +1634,14 @@ async function submitWord() {
     const nextChar = getLastChar(userWord);
     const altNextChar = applyDueum(nextChar);
 
-    const forceFinish = botTurnCount >= 10;
-    const result = await findBotWord(nextChar, altNextChar, forceFinish);
+    // 봇이 "고민"하는 시간 (후반으로 갈수록 더 오래)
+    const thinkMs = 1500 + Math.random() * 2000 + (botTurnCount >= FINISHER_AFTER_TURN ? 1000 : 0);
+    setTimeout(() => { if (loadingBubble && loadingBubble.parentNode) loadingBubble.innerHTML = "🤔 후보 단어를 훑어보는 중..."; }, thinkMs * 0.4);
+    setTimeout(() => { if (loadingBubble && loadingBubble.parentNode) loadingBubble.innerHTML = "🧠 어떤 글자로 끝낼지 고민하는 중..."; }, thinkMs * 0.75);
+    const [result] = await Promise.all([
+        findBotWord(nextChar, altNextChar),
+        new Promise(r => setTimeout(r, thinkMs))
+    ]);
 
     if (loadingBubble && loadingBubble.parentNode) {
         loadingBubble.parentNode.removeChild(loadingBubble);
@@ -1538,48 +1669,67 @@ async function submitWord() {
     }
 }
 
-async function findBotWord(targetChar, altChar, forceFinish = false) {
-    if (forceFinish) {
-        const fatalCandidates = koreanDictionary.filter(w =>
-            (w.startsWith(targetChar) || w.startsWith(altChar)) &&
-            w.length >= 2 &&
-            !wordHistory.includes(w) &&
-            isFatalWord(w)
-        );
-        if (fatalCandidates.length > 0) {
-            const pick = fatalCandidates[Math.floor(Math.random() * fatalCandidates.length)];
-            return { word: pick, finisher: true };
-        }
-    }
-
+// 사전 API에서 해당 글자로 시작하는 단어를 최대 100개 가져오기
+async function fetchDictWords(char) {
     try {
-        const searchUrl = `https://opendict.korean.go.kr/api/search?key=${SAM_API_KEY}&req_type=json&q=${encodeURIComponent(targetChar)}&sort=dict&part=word&advanced=y&method=start`;
-        const data = await fetchWithCorsFallback(searchUrl);
+        const url = `https://opendict.korean.go.kr/api/search?key=${SAM_API_KEY}&req_type=json&q=${encodeURIComponent(char)}&sort=dict&part=word&advanced=y&method=start&num=100`;
+        const data = await fetchWithCorsFallback(url);
         if (data && data.channel && data.channel.item) {
             const items = Array.isArray(data.channel.item) ? data.channel.item : [data.channel.item];
-            for (let item of items) {
-                const cleanWord = item.word.replace(/[^가-힣]/g, '');
-                if (cleanWord.length >= 2 && !wordHistory.includes(cleanWord)) {
-                    if (!forceFinish && isFatalWord(cleanWord)) continue;
-                    return { word: cleanWord, finisher: false };
-                }
-            }
+            return items.map(it => it.word.replace(/[^가-힣]/g, ''));
         }
-    } catch (err) {
-        console.log("API 및 프록시 접근에 실패하여 내장 백업 사전을 사용합니다.");
+    } catch (err) { }
+    return [];
+}
+
+// 단어 끝 글자가 상대에게 얼마나 어려운지 (낮을수록 봇에게 유리)
+function endDifficulty(word) {
+    const last = getLastChar(word);
+    if (fatalEndChars.includes(last)) return -1;   // 한방단어: 최우선
+    const alt = applyDueum(last);
+    if (startCount) {                              // 큰 단어 목록: 이어갈 단어 수로 평가
+        return candidateStarts(last).reduce((n, c) => n + (startCount.get(c) || 0), 0);
     }
+    return koreanDictionary.filter(w =>
+        (w.startsWith(last) || w.startsWith(alt)) && !wordHistory.includes(w)
+    ).length;                                      // 이어갈 단어가 적을수록 좋음
+}
 
-    const candidates = koreanDictionary.filter(w => 
-        (w.startsWith(targetChar) || w.startsWith(altChar)) && 
-        w.length >= 2 && 
-        !wordHistory.includes(w) &&
-        (forceFinish || !isFatalWord(w))
-    );
+// 봇이 한방단어/강공을 쓰기 시작하는 턴 (클수록 게임이 길어짐)
+const FINISHER_AFTER_TURN = 8;
 
-    if (candidates.length > 0) {
-        const pick = candidates[Math.floor(Math.random() * candidates.length)];
-        return { word: pick, finisher: isFatalWord(pick) };
+async function findBotWord(targetChar, altChar) {
+    const starts = candidateStarts(targetChar);
+
+    await loadWordList();
+    const local = koreanDictionary.filter(w => starts.some(c => w.startsWith(c)));
+    const listed = wordsByStart ? starts.flatMap(c => wordsByStart.get(c) || []) : [];
+    const okWord = w => w.length >= 2 && !wordHistory.includes(w) && starts.some(c => w.startsWith(c));
+
+    let pool = [...new Set([...local, ...listed])].filter(okWord);
+    if (pool.length === 0) {                       // 포기하기 전에 사전 API까지 뒤져본다
+        const remote = (await Promise.all(starts.map(fetchDictWords))).flat();
+        pool = [...new Set(remote)].filter(okWord);
     }
+    if (pool.length === 0) return null;
 
-    return null;
+    // 난이도 곡선: 초반엔 평범하게, 후반으로 갈수록 점점 공격적으로
+    const turn = botTurnCount;
+    let cands = pool;
+    if (turn < FINISHER_AFTER_TURN) {                       // 초반엔 한방단어 금지
+        const safe = pool.filter(w => !isFatalWord(w));
+        if (safe.length > 0) cands = safe;
+    }
+    const scored = cands
+        .map(w => ({ w, score: endDifficulty(w) + Math.random() * 0.5 }))
+        .sort((x, y) => x.score - y.score);
+
+    let ratio;                                              // 상위 몇 %에서 고를지 (1 = 완전 랜덤)
+    if (turn < 4) ratio = 1;
+    else if (turn < FINISHER_AFTER_TURN) ratio = 0.5;
+    else ratio = 0.02;
+    const k = Math.max(1, Math.ceil(scored.length * ratio));
+    const best = scored[Math.floor(Math.random() * k)].w;
+
+    return { word: best, finisher: isFatalWord(best) };
 }
