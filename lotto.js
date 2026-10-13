@@ -270,6 +270,26 @@
     };
     const ballsHtml = (nums) => nums.map(n => `<span class="lotto-ball">${n}</span>`).join('');
 
+    // 내 로또 전부 가져오기 (Firestore 1회 조회 한도 때문에 500장씩 끊어서 모두 읽음)
+    async function fetchAllMyTickets(checkedValue) {
+        const PAGE = 500;
+        const out = [];
+        let last = null;
+        while (true) {
+            let q = db.collection('lottoTickets')
+                .where('uid', '==', currentUser.uid)
+                .where('checked', '==', checkedValue)
+                .orderBy(firebase.firestore.FieldPath.documentId())
+                .limit(PAGE);
+            if (last) q = q.startAfter(last);
+            const snap = await q.get();
+            snap.docs.forEach(d => out.push({ id: d.id, ...d.data() }));
+            if (snap.docs.length < PAGE) break;
+            last = snap.docs[snap.docs.length - 1];
+        }
+        return out;
+    }
+
     // --- 내 로또함: 아직 당첨 확인을 안 한 로또만 ---
     let myTicketsCache = [];
     async function loadMyTicketsAndRender() {
@@ -278,12 +298,7 @@
         listBox.innerHTML = loadingHtml;
         try {
             // where 두 개(둘 다 ==)만 사용 → 복합 색인 불필요. 정렬은 클라이언트에서 처리
-            const snap = await db.collection('lottoTickets')
-                .where('uid', '==', currentUser.uid)
-                .where('checked', '==', false)
-                .limit(200)
-                .get();
-            myTicketsCache = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort(sortNewest);
+            myTicketsCache = (await fetchAllMyTickets(false)).sort(sortNewest);
         } catch (e) {
             console.warn('로또 목록 조회 실패:', e);
             myTicketsCache = [];
@@ -327,12 +342,7 @@
         if (!box) return;
         if (!historyLoaded) box.innerHTML = loadingHtml;
         try {
-            const snap = await db.collection('lottoTickets')
-                .where('uid', '==', currentUser.uid)
-                .where('checked', '==', true)
-                .limit(500)
-                .get();
-            historyCache = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            historyCache = (await fetchAllMyTickets(true))
                 .sort((a, b) => (a.round === b.round ? sortNewest(a, b) : (a.round < b.round ? 1 : -1)));
 
             const ids = [...new Set(historyCache.map(t => t.round))].filter(id => !roundsCache[id]);
