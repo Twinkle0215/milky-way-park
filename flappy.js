@@ -19,26 +19,26 @@
     const STALE_MS = 20000;            // 이 시간 동안 신호가 없으면 접속 끊긴 것으로 처리
 
     // 물리 / 난이도 (60fps 기준 프레임 단위)
-    const GRAVITY = 0.42;
-    const FLAP_VELOCITY = -6.6;
-    const MAX_FALL = 9;
-    const SPEED = 2.8;
+    const GRAVITY = 0.39;
+    const FLAP_VELOCITY = -6.4;
+    const MAX_FALL = 8;
+    const SPEED = 2.45;
     const BIRD_X = 90;
     const BIRD_R = 13;
     const PILLAR_W = 64;
-    const GAP = 165;
-    const PILLAR_SPACING = 210;
-    const SPIKE_H = 18;
+    const GAP = 190;
+    const PILLAR_SPACING = 230;
+    const SPIKE_H = 14;
     const SPIKE_COUNT = 4;
     const GROUND_H = 36;
 
     // 점수(기둥 순서)가 오를수록 어려워짐
-    const SPEED_PER_SCORE = 0.035;  // 기둥 1개당 속도 증가
-    const SPEED_MAX_BONUS = 1.2;    // 속도 증가 상한
-    const GAP_SHRINK = 1.3;         // 기둥 1개당 구멍 줄어드는 양
-    const GAP_MIN = 125;            // 구멍 최소 크기
-    const MOVE_START = 8;           // 이 단계부터 구멍이 위아래로 움직임
-    const MOVE_MAX = 40;            // 구멍 움직임 최대 폭
+    const SPEED_PER_SCORE = 0.02;  // 기둥 1개당 속도 증가
+    const SPEED_MAX_BONUS = 0.85;    // 속도 증가 상한
+    const GAP_SHRINK = 0.7;         // 기둥 1개당 구멍 줄어드는 양
+    const GAP_MIN = 150;            // 구멍 최소 크기
+    const MOVE_START = 14;           // 이 단계부터 구멍이 위아래로 움직임
+    const MOVE_MAX = 28;            // 구멍 움직임 최대 폭
 
     // ===== 시드 난수 (온라인에서 모두 같은 기둥 배치를 위해) =====
     function mulberry32(a) {
@@ -71,7 +71,7 @@
         const level = Math.max(0, s.spawned - 2);        // 기둥 순서 기준 난이도 (모든 플레이어 동일)
         s.spawned += 1;
         const gap = Math.max(GAP_MIN, GAP - level * GAP_SHRINK);
-        const maxDelta = Math.max(90, 120 - level);
+        const maxDelta = Math.max(75, 100 - level);
         const amp = level >= MOVE_START ? Math.min((level - MOVE_START + 1) * 2, MOVE_MAX) : 0;
         const min = gap / 2 + 25 + amp, max = H - GROUND_H - gap / 2 - 25 - amp;
         let base = min + s.rng() * (max - min);
@@ -100,7 +100,7 @@
         const pts = [[0, 0]];
         for (let i = 0; i < 8; i++) {
             const a = (Math.PI * 2 * i) / 8;
-            pts.push([Math.cos(a) * (BIRD_R - 2), Math.sin(a) * (BIRD_R - 2)]);
+            pts.push([Math.cos(a) * (BIRD_R - 3), Math.sin(a) * (BIRD_R - 3)]);
         }
         const topEnd = p.gapY - p.gap / 2;
         const botStart = p.gapY + p.gap / 2;
@@ -250,12 +250,13 @@
         overlay.innerHTML = `
             <div class="fb-top">
                 <span><i class="fa-solid fa-dove" style="color:#38bdf8;"></i> 플라피 버드</span>
-                <span>🪙 <span id="fb-coins">0</span>원 &nbsp; <button class="fb-btn-top" id="fb-back">닫기</button></span>
+                <span><button class="fb-btn-top" id="fb-bgm" title="배경음악">🔊</button> &nbsp; 🪙 <span id="fb-coins">0</span>원 &nbsp; <button class="fb-btn-top" id="fb-back">닫기</button></span>
             </div>
             <div class="fb-body" id="fb-body"></div>`;
         document.body.appendChild(overlay);
         body = $('fb-body');
         $('fb-back').addEventListener('click', onBack);
+        if (window.GameBGM) GameBGM.bindButton($('fb-bgm')); else { const b = $('fb-bgm'); if (b) b.style.display = 'none'; }
         document.addEventListener('keydown', onKey);
     }
 
@@ -302,8 +303,8 @@
                 <button class="fb-btn sub" id="fb-rank">🏆 랭킹</button>
             </div>`;
         $('fb-solo').addEventListener('click', startSolo);
-        $('fb-online').addEventListener('click', showLobby);
-        $('fb-rank').addEventListener('click', () => showRanking('best'));
+        $('fb-online').addEventListener('click', () => { if (requireOnline('온라인 대결')) showLobby(); });
+        $('fb-rank').addEventListener('click', () => { if (requireOnline('랭킹')) showRanking('best'); });
     }
 
     // ===== 게임 화면 공통 =====
@@ -327,6 +328,7 @@
     }
 
     function stopGame() {
+        if (window.GameBGM) GameBGM.stop();
         cancelAnimationFrame(raf);
         clearInterval(hbTimer); clearInterval(endTimer); clearInterval(cdTimer);
         hbTimer = endTimer = cdTimer = null;
@@ -367,6 +369,7 @@
 
     function soloOver() {
         phase = 'over';
+        if (window.Quests) { window.Quests.track('play'); window.Quests.track('flappyPillars', state.score); }
         recordScore(state.score);
         saveCoins();
         setMsg(`
@@ -465,6 +468,16 @@
         const dt = lastTs ? Math.min((ts - lastTs) / 16.667, 2) : 1;
         lastTs = ts;
 
+        // 게임 상태에 맞춰 배경음악 재생/정지 (플레이 중에만 연주, 점수가 오를수록 템포 상승)
+        if (window.GameBGM) {
+            if (phase === 'playing' && state.alive) {
+                GameBGM.setSpeed(1 + Math.min(0.3, (state.score || 0) * 0.008));
+                GameBGM.play('flappy');
+            } else {
+                GameBGM.stop();
+            }
+        }
+
         if (phase === 'playing') {
             const passed = step(state, dt);
             if (passed > 0) {
@@ -484,35 +497,28 @@
     }
 
     // ===== 랭킹 =====
-    async function showRanking(tab) {
+    async function showRanking() {
         stopGame();
         detachLobby();
         mode = 'ranking';
         setBackLabel();
-        const field = tab === 'wins' ? 'flappyWins' : 'flappyBest';
-        const unit = tab === 'wins' ? '승' : '개';
         body.innerHTML = `
             <div style="width:100%;">
-                <div class="fb-tabs">
-                    <button class="fb-btn ${tab === 'best' ? '' : 'off'}" id="fb-tab-best">최고 기록</button>
-                    <button class="fb-btn ${tab === 'wins' ? '' : 'off'}" id="fb-tab-wins">온라인 승리</button>
-                </div>
+                <div style="text-align:center; font-weight:bold;">🏆 최고 기록 TOP 20</div>
                 <div class="fb-list" id="fb-rank-list"><div class="fb-row">불러오는 중...</div></div>
             </div>`;
-        $('fb-tab-best').addEventListener('click', () => showRanking('best'));
-        $('fb-tab-wins').addEventListener('click', () => showRanking('wins'));
         try {
-            const snap = await db.collection('users').orderBy(field, 'desc').limit(20).get();
+            const snap = await db.collection('users').orderBy('flappyBest', 'desc').limit(20).get();
             if (mode !== 'ranking' || !$('fb-rank-list')) return;
             const rows = [];
             let i = 0;
             snap.forEach(doc => {
                 const d = doc.data();
-                if (!(d[field] > 0)) return;
+                if (!(d.flappyBest > 0)) return;
                 i += 1;
                 const medal = i === 1 ? '🥇' : i === 2 ? '🥈' : i === 3 ? '🥉' : `${i}.`;
                 const me = doc.id === myUid() ? ' style="outline:2px solid var(--accent-color,#6c63ff);"' : '';
-                rows.push(`<div class="fb-row"${me}><span>${medal} ${esc(d.name || '이름없음')}</span><b>${d[field]}${unit}</b></div>`);
+                rows.push(`<div class="fb-row"${me}><span>${medal} ${esc(d.name || '이름없음')}</span><b>${d.flappyBest}개</b></div>`);
             });
             $('fb-rank-list').innerHTML = rows.length ? rows.join('') : '<div class="fb-row">아직 기록이 없어요. 첫 기록을 세워보세요!</div>';
         } catch (e) {
@@ -543,6 +549,7 @@
             </div>`;
         $('fb-create').addEventListener('click', createRoom);
 
+        if (typeof cleanupStaleRooms === 'function') cleanupStaleRooms(); // 오래된 방 정리 (목록 30개 제한이 막히지 않게)
         lobbyUnsub = db.collection(ROOMS).where('status', '==', ST_WAIT).limit(30).onSnapshot((snap) => {
             const list = $('fb-room-list');
             if (!list || mode !== 'lobby') return;
@@ -791,6 +798,7 @@
     function onlineDied() {
         phase = 'over';
         myDiedAt = Date.now();
+        if (window.Quests) { window.Quests.track('play'); window.Quests.track('flappyPillars', state.score); }
         recordScore(state.score);
         saveCoins();
         publish({ alive: false, score: state.score, diedAt: firebase.firestore.FieldValue.serverTimestamp() });
@@ -844,6 +852,7 @@
     async function finishOnline(winnerUid) {
         if (finished) return;
         finished = true;
+        const wasAlive = (phase === 'playing');   // 끝까지 살아남은 승자는 여기서 집계
         phase = 'done';
         clearInterval(hbTimer); clearInterval(endTimer);
         const all = standings();
@@ -857,6 +866,7 @@
         else if (winnerUid === '') { title = '🤝 무승부'; note = '정산 없음'; }
         else if (winnerUid === me) {
             title = '🏆 승리!';
+            if (window.Quests && eligible) { window.Quests.track('win'); window.Quests.track('flappyOnlineWin'); }
             if (eligible) { bonusOk = true; delta = applyCoinDelta(WIN_BONUS); note = `상대보다 오래 살아남았어요! <b>+${delta}원</b>`; }
             else note = lowMsg;
         } else {
@@ -864,6 +874,8 @@
             if (eligible) { delta = applyCoinDelta(-LOSE_PENALTY); note = `<b>${delta}원</b>`; }
             else note = lowMsg;
         }
+
+        if (wasAlive && state && window.Quests) { window.Quests.track('play'); window.Quests.track('flappyPillars', state.score); }
 
         const rows = all.map(p => `
             <div class="fb-row" ${p.uid === me ? 'style="outline:2px solid #ffd54f;"' : ''}>
@@ -888,6 +900,7 @@
     // ===== 열기 / 닫기 =====
     function open() {
         if (overlay) return;
+        if (window.GameBGM) GameBGM.prime();   // 모바일 오디오 잠금 해제 (카드 클릭 직후에 호출됨)
         loadLocalBest();
         sessionCoins = 0;
         unsaved = false;
