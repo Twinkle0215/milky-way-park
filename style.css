@@ -552,3 +552,7 @@ body { --main-text: var(--text-color); --border-color: var(--card-border); }
 .bd-row-body .bd-footer { margin-top: 12px; }
 .bd-row-body .bd-item-actions { margin-top: 12px; }
 .bd-tag.done { background: rgba(46, 204, 113, 0.18); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.4); }
+
+/* 한글이 단어 중간에서 끊기지 않게 (예: "모" 한 글자만 다음 줄로 떨어지는 현상 방지) */
+.bd-box, .bd-box * { word-break: keep-all; overflow-wrap: break-word; }
+.bd-list li, .bd-footer, .bd-notice-body, .bd-row-title { word-break: keep-all; overflow-wrap: anywhere; }
