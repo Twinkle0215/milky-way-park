@@ -37,6 +37,8 @@ function initializeGameStats(userData) {
             omokLosses: 0,
             tictactoeWins: 0,
             tictactoeLosses: 0,
+            tetrisWins: 0,
+            tetrisLosses: 0,
             totalGamePoint: 0,
             totalCoin: 0,
             lastGameDate: null
@@ -64,8 +66,8 @@ function calculateWinRate(wins, losses) {
 
 // ===== 전체 통계 =====
 function getGameStats(gameStats) {
-    const totalWins = (gameStats.omokWins || 0) + (gameStats.tictactoeWins || 0);
-    const totalLosses = (gameStats.omokLosses || 0) + (gameStats.tictactoeLosses || 0);
+    const totalWins = (gameStats.omokWins || 0) + (gameStats.tictactoeWins || 0) + (gameStats.tetrisWins || 0);
+    const totalLosses = (gameStats.omokLosses || 0) + (gameStats.tictactoeLosses || 0) + (gameStats.tetrisLosses || 0);
     const winRate = calculateWinRate(totalWins, totalLosses);
     
     return {
@@ -76,62 +78,52 @@ function getGameStats(gameStats) {
         omokLosses: gameStats.omokLosses || 0,
         tictactoeWins: gameStats.tictactoeWins || 0,
         tictactoeLosses: gameStats.tictactoeLosses || 0,
+        tetrisWins: gameStats.tetrisWins || 0,
+        tetrisLosses: gameStats.tetrisLosses || 0,
         totalGamePoint: gameStats.totalGamePoint || 0
     };
 }
 
 // ===== 게임 결과 기록 =====
+// 서버에 저장된 "현재 포인트"를 트랜잭션으로 읽어서 +/-만 반영한다.
+//  - (예전) 내 기기의 절대값을 덮어써서, 다른 기기와 값이 어긋나면 규칙(±100 제한)에 막혀 계속 저장 실패
+const _GAME_STAT_KEYS = {
+    omok: ['omokWins', 'omokLosses'],
+    tictactoe: ['tictactoeWins', 'tictactoeLosses'],
+    tetris: ['tetrisWins', 'tetrisLosses']
+};
 async function recordGameResult(gameType, isWin, opponent = null) {
     if (!currentUser || !userData) {
         console.error('사용자 정보 없음');
-        return;
+        return false;
     }
-
+    const keys = _GAME_STAT_KEYS[gameType];
+    if (!keys) { console.error('알 수 없는 게임 종류:', gameType); return false; }
+    const uidAtStart = currentUser.uid;
     try {
-        initializeGameStats(userData);
-
-        const ref = db.collection('users').doc(currentUser.uid);
-        const updates = {};
-
-        // 게임 통계 업데이트
-        if (gameType === 'omok') {
-            if (isWin) {
-                userData.gameStats.omokWins = (userData.gameStats.omokWins || 0) + 1;
-                userData.gameStats.totalGamePoint = (userData.gameStats.totalGamePoint || 0) + GAME_REWARDS.WIN;
-                updates['gameStats.omokWins'] = firebase.firestore.FieldValue.increment(1);
-            } else {
-                userData.gameStats.omokLosses = (userData.gameStats.omokLosses || 0) + 1;
-                userData.gameStats.totalGamePoint = (userData.gameStats.totalGamePoint || 0) + GAME_REWARDS.LOSS;
-                updates['gameStats.omokLosses'] = firebase.firestore.FieldValue.increment(1);
-            }
-        } else if (gameType === 'tictactoe') {
-            if (isWin) {
-                userData.gameStats.tictactoeWins = (userData.gameStats.tictactoeWins || 0) + 1;
-                userData.gameStats.totalGamePoint = (userData.gameStats.totalGamePoint || 0) + GAME_REWARDS.WIN;
-                updates['gameStats.tictactoeWins'] = firebase.firestore.FieldValue.increment(1);
-            } else {
-                userData.gameStats.tictactoeLosses = (userData.gameStats.tictactoeLosses || 0) + 1;
-                userData.gameStats.totalGamePoint = (userData.gameStats.totalGamePoint || 0) + GAME_REWARDS.LOSS;
-                updates['gameStats.tictactoeLosses'] = firebase.firestore.FieldValue.increment(1);
-            }
+        const ref = db.collection('users').doc(uidAtStart);
+        const resultStats = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            const gs = (snap.exists && snap.data().gameStats) || {};
+            const key = isWin ? keys[0] : keys[1];
+            const delta = isWin ? GAME_REWARDS.WIN : GAME_REWARDS.LOSS;
+            const nextPoint = Math.max(0, (gs.totalGamePoint || 0) + delta);
+            tx.update(ref, {
+                ['gameStats.' + key]: (gs[key] || 0) + 1,
+                'gameStats.totalGamePoint': nextPoint,
+                'gameStats.lastGameDate': firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return Object.assign({}, gs, { [key]: (gs[key] || 0) + 1, totalGamePoint: nextPoint });
+        });
+        // 그 사이 계정이 바뀌었으면 새 계정의 화면 데이터를 건드리지 않음
+        if (currentUser && currentUser.uid === uidAtStart) {
+            initializeGameStats(userData);
+            Object.assign(userData.gameStats, resultStats);
+            if (typeof updateTopMoney === 'function') updateTopMoney();
         }
-
-        // 포인트와 코인 업데이트
-        if (userData.gameStats.totalGamePoint < 0) userData.gameStats.totalGamePoint = 0;
-        updates['gameStats.totalGamePoint'] = userData.gameStats.totalGamePoint;
-        updates['gameStats.totalCoin'] = userData.coin;
-        updates['gameStats.lastGameDate'] = firebase.firestore.FieldValue.serverTimestamp();
-        updates['coin'] = userData.coin;
-
-        // Firestore 업데이트
-        await ref.update(updates);
-
-        // 로컬 업데이트
-        updateTopMoney();
-
+        _rankingCache = {};
         console.log(`게임 결과 기록됨: ${gameType} - ${isWin ? '승리' : '패배'}`);
         return true;
-
     } catch (error) {
         console.error('게임 결과 기록 실패:', error);
         return false;
@@ -139,28 +131,27 @@ async function recordGameResult(gameType, isWin, opponent = null) {
 }
 
 // ===== 랭킹 데이터 조회 =====
+// 유저 문서에는 이미지(base64)가 들어 있어서 50명을 읽으면 용량이 큼 → 60초 동안은 같은 결과를 재사용
+let _rankingCache = {};
 async function fetchRankings(type = 'game', limit = 10) {
+    const myUid = currentUser ? currentUser.uid : null;
+    const cacheKey = type + ':' + limit;
+    const hit = _rankingCache[cacheKey];
+    if (hit && Date.now() - hit.t < 60000 && hit.uid === myUid) {
+        return hit.list.map(r => Object.assign({}, r, { isCurrentUser: r.uid === myUid }));
+    }
     try {
         let query = db.collection('users');
-
-        if (type === 'coin') {
-            // 코인 랭킹: 코인 높은 순서로
-            query = query.orderBy('coin', 'desc');
-        } else if (type === 'game') {
-            // 게임 랭킹: 게임 포인트 높은 순서로
-            query = query.orderBy('gameStats.totalGamePoint', 'desc');
-        }
+        if (type === 'coin') query = query.orderBy('coin', 'desc');
+        else if (type === 'game') query = query.orderBy('gameStats.totalGamePoint', 'desc');
 
         const snapshot = await query.limit(limit).get();
-        const rankings = [];
-
-        snapshot.forEach((doc, index) => {
+        // Firestore 의 forEach 는 index 를 넘겨주지 않음(rank 가 NaN 이 되던 버그) → docs 배열 사용
+        const rankings = snapshot.docs.map((doc, index) => {
             const data = doc.data();
-            const gameStats = data.gameStats || {};
-            const stats = getGameStats(gameStats);
+            const stats = getGameStats(data.gameStats || {});
             const tier = calculateTier(stats.totalGamePoint);
-
-            rankings.push({
+            return {
                 uid: doc.id,
                 rank: index + 1,
                 name: data.name || '익명의 플레이어',
@@ -174,10 +165,10 @@ async function fetchRankings(type = 'game', limit = 10) {
                 totalWins: stats.totalWins,
                 totalLosses: stats.totalLosses,
                 winRate: stats.winRate,
-                isCurrentUser: doc.id === (currentUser?.uid || null)
-            });
+                isCurrentUser: doc.id === myUid
+            };
         });
-
+        _rankingCache[cacheKey] = { t: Date.now(), uid: myUid, list: rankings };
         return rankings;
     } catch (error) {
         console.error('랭킹 데이터 조회 실패:', error);
