@@ -107,7 +107,7 @@ function openRankInfoModal() {
         </div>
 
         <div style="font-size:10px; color:var(--sub-text); margin-top:12px; line-height:1.5;">
-            💡 오목/틱택토 <b>랭킹 모드</b>에서 승리 시 +100P, 패배 시 -20P를 잃습니다.
+            💡 오목/틱택토/테트리스 <b>랭킹 모드</b>에서 승리 시 +${GAME_REWARDS.WIN}P, 패배 시 -${Math.abs(GAME_REWARDS.LOSS)}P를 잃습니다.
         </div>
     `;
 
@@ -130,6 +130,7 @@ function openRankInfoModal() {
 
 async function renderRankingPage() {
     const content = document.getElementById('content');
+    if (typeof isOnline === 'function' && !isOnline()) { content.innerHTML = offlineNoticeHTML('랭킹'); return; }
     
     // 기본 구조 생성
     content.innerHTML = `
@@ -208,9 +209,11 @@ async function switchRankingTab(type) {
     const content = document.getElementById('ranking-content');
     content.innerHTML = '<div style="text-align:center; padding:20px; color:var(--sub-text);"><i class="fa-solid fa-spinner fa-spin"></i> 로딩 중...</div>';
 
-    // 랭킹 데이터 조회
+    // 랭킹 데이터 조회 (탭을 빠르게 바꿔도 늦게 온 이전 응답이 화면을 덮어쓰지 않게 번호표 사용)
+    const myTicket = (window._rankTabTicket = (window._rankTabTicket || 0) + 1);
     try {
         const rankings = await fetchRankings(type, 50);
+        if (myTicket !== window._rankTabTicket || !document.getElementById('ranking-content')) return;
         renderRankingList(rankings, type);
     } catch (error) {
         console.error('랭킹 조회 오류:', error);
@@ -274,10 +277,10 @@ function renderRankingList(rankings, type) {
                 <!-- 프로필 -->
                 <div style="display:flex; align-items:center; gap:8px; flex:1 1 0; min-width:0;">
                     <div style="width:36px; height:36px; border-radius:50%; background:rgba(100,150,200,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        ${user.avatarUrl ? `<img src="${user.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '<i class="fa-solid fa-user"></i>'}
+                        ${safeImgUrl(user.avatarUrl) ? `<img src="${safeImgUrl(user.avatarUrl)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '<i class="fa-solid fa-user"></i>'}
                     </div>
                     <div style="min-width:0;">
-                        <div style="font-weight:bold; font-size:13px; overflow-wrap:anywhere;">${user.name} ${isCurrentUser ? '(나)' : ''}</div>
+                        <div style="font-weight:bold; font-size:13px; overflow-wrap:anywhere;">${escHtml(user.name)} ${isCurrentUser ? '(나)' : ''}</div>
                         <div style="font-size:11px; color:var(--sub-text); display:flex; align-items:center; gap:4px;">${getTierIconHTML(user.tierKey, 14)} ${user.tier}</div>
                     </div>
                 </div>
@@ -308,8 +311,8 @@ async function openRankingUserProfile(uid) {
         const stats = getGameStats(gameStats);
         const tier = calculateTier(stats.totalGamePoint);
 
-        const bannerUrl = data.bannerUrl || null;
-        const avatarUrl = data.avatarUrl || null;
+        const bannerUrl = safeImgUrl(data.bannerUrl) || null;
+        const avatarUrl = safeImgUrl(data.avatarUrl) || null;
 
         // 기존 모달이 있으면 제거
         const existing = document.getElementById('ranking-profile-modal');
@@ -355,7 +358,7 @@ async function openRankingUserProfile(uid) {
                 </div>
 
                 <!-- 닉네임 -->
-                <div style="font-size: 15px; font-weight: bold; margin-bottom: 2px;">${data.name || '익명의 플레이어'}</div>
+                <div style="font-size: 15px; font-weight: bold; margin-bottom: 2px;">${escHtml(data.name || '익명의 플레이어')}</div>
 
                 <!-- 등급 + 포인트 -->
                 <div style="font-size: 11px; color: var(--sub-text); margin-bottom: 10px; display:flex; align-items:center; justify-content:center; gap:5px;">
@@ -368,7 +371,7 @@ async function openRankingUserProfile(uid) {
                 <!-- 자기소개 박스 -->
                 <div style="background: rgba(255,255,255,0.05); padding: 9px; border-radius: 8px; margin-bottom: 10px; text-align: left; border-left: 3px solid var(--accent-color);">
                     <div style="font-size: 9px; color: var(--accent-color); margin-bottom: 4px; font-weight: bold;">자기소개</div>
-                    <div style="font-size: 11px; word-break: break-word; white-space: pre-wrap; line-height: 1.3;">${data.aboutMe || '자기소개를 적지 않았습니다.'}</div>
+                    <div style="font-size: 11px; word-break: break-word; white-space: pre-wrap; line-height: 1.3;">${escHtml(data.aboutMe || '자기소개를 적지 않았습니다.')}</div>
                 </div>
 
                 <!-- 승률 -->
@@ -384,7 +387,7 @@ async function openRankingUserProfile(uid) {
                 </div>
 
                 <!-- 게임별 통계 -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                     <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; text-align: center;">
                         <div style="font-size: 9px; color: var(--sub-text); margin-bottom: 3px; font-weight: bold;">🎮 오목</div>
                         <div style="font-size: 12px; font-weight: bold;">${stats.omokWins}W</div>
@@ -394,6 +397,11 @@ async function openRankingUserProfile(uid) {
                         <div style="font-size: 9px; color: var(--sub-text); margin-bottom: 3px; font-weight: bold;">⭕ 틱택토</div>
                         <div style="font-size: 12px; font-weight: bold;">${stats.tictactoeWins}W</div>
                         <div style="font-size: 10px; color: var(--sub-text);">${stats.tictactoeLosses}L</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 9px; color: var(--sub-text); margin-bottom: 3px; font-weight: bold;">🧱 테트리스</div>
+                        <div style="font-size: 12px; font-weight: bold;">${stats.tetrisWins}W</div>
+                        <div style="font-size: 10px; color: var(--sub-text);">${stats.tetrisLosses}L</div>
                     </div>
                 </div>
             </div>
