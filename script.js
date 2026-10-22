@@ -4,6 +4,19 @@ let ytPlayer = null;
 let ytReady = false;
 let isBgmMuted = false;
 
+// 유튜브 BGM 라이브러리는 "시작하기"를 누를 때, 그리고 인터넷이 있을 때만 불러온다
+// → 첫 화면이 훨씬 빨리 뜨고, 오프라인에서도 에러가 나지 않는다
+let ytApiRequested = false;
+function loadYouTubeApi() {
+    if (ytApiRequested || !navigator.onLine) return;
+    ytApiRequested = true;
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.async = true;
+    s.onerror = () => { ytApiRequested = false; };
+    document.head.appendChild(s);
+}
+
 function onYouTubeIframeAPIReady() {
     ytPlayer = new YT.Player('yt-player', {
         height: '0',
@@ -36,6 +49,7 @@ function onYouTubeIframeAPIReady() {
     });
 }
 
+let bgmRetry = 0;
 function playBGM() {
     if (ytReady && ytPlayer && typeof ytPlayer.playVideo === 'function') {
         ytPlayer.mute();
@@ -48,13 +62,13 @@ function playBGM() {
             isBgmMuted = false;
             updateMuteIcon();
         }, 400);
-    } else {
+    } else if (ytApiRequested && navigator.onLine && bgmRetry++ < 50) { // 최대 약 15초만 재시도 (YouTube API 차단 환경 대비)
         setTimeout(playBGM, 300);
     }
 }
 
 function toggleMute() {
-    if (!ytPlayer) return;
+    if (!ytPlayer || !ytReady) return;
     if (isBgmMuted) {
         ytPlayer.unMute();
         ytPlayer.setVolume(100);
@@ -336,7 +350,8 @@ function animate() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         stars.forEach(star => {
             star.alpha += star.speed;
-            if (star.alpha > 1 || star.alpha < 0.2) star.speed = -star.speed;
+            if (star.alpha >= 1) { star.alpha = 1; star.speed = -Math.abs(star.speed); }
+            else if (star.alpha <= 0.2) { star.alpha = 0.2; star.speed = Math.abs(star.speed); }
             ctx.beginPath();
             ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
@@ -356,6 +371,7 @@ function startApp() {
         // auth.js의 로그인 상태 확인 후 로그인 모달 또는 메인 화면으로 분기
         proceedAfterIntro();
     }, 800);
+    loadYouTubeApi();
     playBGM();
 }
 
@@ -386,8 +402,9 @@ function updateTopMoney() {
 
 function calculateDDay(targetDate) {
     const today = new Date(); today.setHours(0, 0, 0, 0); 
-    const target = new Date(targetDate); target.setHours(0, 0, 0, 0);
-    const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    const p = String(targetDate).split('-').map(Number); // 'YYYY-MM-DD'를 기기 시간대 기준으로 해석 (UTC 해석으로 하루 밀리는 문제 방지)
+    const target = new Date(p[0], (p[1] || 1) - 1, p[2] || 1);
+    const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
     if (diffDays === 0) return "D-Day";
     return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
 }
@@ -415,6 +432,7 @@ function updateBannerCropTransform() {
 
 function onAvatarSelected(e) {
     const file = e.target.files[0];
+    e.target.value = ''; // 같은 파일을 다시 골라도 동작
     if (file) {
         const reader = new FileReader();
         reader.onload = function(ev) {
@@ -452,6 +470,56 @@ function closeCropModal() {
     document.getElementById('crop-modal').style.display = 'none';
 }
 
+// ===== 이미지 압축 도우미 (Firestore 문서 1MB 한도 보호) =====
+// canvas -> 작은 data URL. WebP 우선, 미지원 브라우저(구형 Safari 등)는 JPEG로 대체
+function canvasToSmallDataURL(canvas, quality) {
+    const q = quality || 0.82;
+    const webp = canvas.toDataURL('image/webp', q);
+    if (webp.indexOf('data:image/webp') === 0) return webp;
+    const flat = document.createElement('canvas'); // JPEG는 투명도가 없으므로 배경색으로 채움
+    flat.width = canvas.width; flat.height = canvas.height;
+    const fctx = flat.getContext('2d');
+    fctx.fillStyle = '#1c1c24';
+    fctx.fillRect(0, 0, flat.width, flat.height);
+    fctx.drawImage(canvas, 0, 0);
+    return flat.toDataURL('image/jpeg', q);
+}
+
+// 파일 -> 긴 변 maxSide 이하로 줄이고, 60만 자 이하가 될 때까지 화질/크기를 낮춘 data URL
+function compressImageFile(file, maxSide, quality, maxLen) {
+    const LIMIT = maxLen || 600000;
+    return new Promise((resolve, reject) => {
+        const objUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            try {
+                let w = img.naturalWidth, h = img.naturalHeight;
+                const scale = Math.min(1, maxSide / Math.max(w, h));
+                w = Math.max(1, Math.round(w * scale));
+                h = Math.max(1, Math.round(h * scale));
+                let q = quality || 0.8;
+                const canvas = document.createElement('canvas');
+                const draw = () => {
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    return canvasToSmallDataURL(canvas, q);
+                };
+                let url = draw();
+                for (let i = 0; i < 8 && url.length > LIMIT; i++) {
+                    if (q > 0.5) q -= 0.1;
+                    else { w = Math.max(1, Math.round(w * 0.8)); h = Math.max(1, Math.round(h * 0.8)); }
+                    url = draw();
+                }
+                if (url.length > LIMIT * 1.3) reject(new Error('too large'));
+                else resolve(url);
+            } catch (err) { reject(err); }
+            finally { URL.revokeObjectURL(objUrl); }
+        };
+        img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('load failed')); };
+        img.src = objUrl;
+    });
+}
+
 function saveCroppedAvatar() {
     const outputSize = 300;
     const img = document.getElementById('crop-img');
@@ -472,7 +540,7 @@ function saveCroppedAvatar() {
     ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
     ctx.restore();
     
-    userData.avatarUrl = canvas.toDataURL('image/png');
+    userData.avatarUrl = canvasToSmallDataURL(canvas, 0.85);
     closeCropModal();
     loadPage('profile');
     if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
@@ -480,6 +548,7 @@ function saveCroppedAvatar() {
 
 function onBannerSelected(e) {
     const file = e.target.files[0];
+    e.target.value = '';
     if (file) {
         const reader = new FileReader();
         reader.onload = function(ev) {
@@ -536,7 +605,7 @@ function saveCroppedBanner() {
     ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
     ctx.restore();
     
-    userData.bannerUrl = canvas.toDataURL('image/png');
+    userData.bannerUrl = canvasToSmallDataURL(canvas, 0.82);
     closeBannerCropModal();
     loadPage('profile');
     if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
@@ -617,8 +686,12 @@ function renderThemeShop() {
 
 async function buyTheme(id) {
     if (isThemeOwned(id)) return;
+    if (!requireOnline('테마 구매')) return;
     const theme = THEME_LIST.find(t => t.id === id);
     if (!confirm(`${theme ? theme.emoji + ' ' + theme.name : id} 테마를 ${THEME_PRICE.toLocaleString()}원에 구매할까요?`)) return;
+
+    // 아직 서버에 안 보낸 코인 증감분을 먼저 저장해서, 서버 기준 잔액 검사가 로컬과 어긋나지 않게 함
+    await saveUserDataToFirestore();
 
     // 코인 차감 + 소유 목록 추가를 Firestore 트랜잭션으로 원자적으로 처리.
     // (기존에는 로컬 값을 통째로 덮어써서, 그 사이 다른 저장이 끼어들면 방금 산 테마가 사라지는 버그가 있었음)
@@ -651,7 +724,7 @@ async function buyTheme(id) {
     // 서버 기준으로 로컬 상태 동기화
     if (!userData.ownedThemes) userData.ownedThemes = ['dark', 'light'];
     if (!userData.ownedThemes.includes(id)) userData.ownedThemes.push(id);
-    if (result === 'ok') userData.coin -= THEME_PRICE;
+    if (result === 'ok') applyServerCoinDelta(-THEME_PRICE); // 서버가 이미 차감했으므로 동기화 기준도 함께 이동
     updateTopMoney();
     renderThemeShop();
     if (result === 'ok') alert('✅ 구매 완료! 설정 → 테마 선택에서 장착할 수 있어요.');
@@ -688,7 +761,8 @@ function setTheme(themeName) {
     if (themeName === 'custom-image') {
         document.body.classList.add('theme-custom-image');
         if (userData.customThemeBgUrl) {
-            document.body.style.backgroundImage = `url('${userData.customThemeBgUrl}')`;
+            const _bg = safeImgUrl(userData.customThemeBgUrl);
+            if (_bg) document.body.style.backgroundImage = `url('${_bg}')`;
         }
     } else if (themeName !== 'dark') {
         document.body.classList.add('theme-' + themeName);
@@ -699,6 +773,7 @@ function setTheme(themeName) {
     // localStorage에 저장 (페이지 재로드 시 빠르게 복원하기 위함)
     try {
         localStorage.setItem('currentTheme', themeName);
+        localStorage.setItem('themeOwnerUid', (typeof currentUser !== 'undefined' && currentUser) ? currentUser.uid : '');
         if (themeName === 'custom-image' && userData.customThemeBgUrl) {
             localStorage.setItem('customThemeBgUrl', userData.customThemeBgUrl);
         } else {
@@ -714,15 +789,16 @@ function setTheme(themeName) {
 
 function setCustomImageTheme(e) {
     const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            userData.customThemeBgUrl = ev.target.result;
-            setTheme('custom-image');
-            setPickerActive('theme-picker-track', 'custom-image');
-        };
-        reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    // 원본 그대로 저장하면 Firestore 1MB 한도를 넘어 프로필 저장이 통째로 실패하므로 줄여서 저장
+    compressImageFile(file, 1280, 0.8, 350000).then(url => {
+        userData.customThemeBgUrl = url;
+        setTheme('custom-image');
+        setPickerActive('theme-picker-track', 'custom-image');
+    }).catch(() => {
+        alert('이미지를 불러오지 못했어요. JPG / PNG / WebP 파일을 사용해주세요.');
+    });
+    e.target.value = ''; // 같은 파일을 다시 골라도 동작하도록
 }
 
 function renderEquippedTitleBadge() {
@@ -893,18 +969,29 @@ function closeSettingsModal() { document.getElementById('settings-modal').style.
 function openCreditModal() { document.getElementById('credit-modal').style.display = 'flex'; }
 function closeCreditModal() { document.getElementById('credit-modal').style.display = 'none'; }
 
-function loadPage(page, btn) {
-    // 게임 페이지를 벗어나거나 다시 로드할 때 타이머 중지
-    stopWordTimer();
+// 게임 센터 카드 클릭 도우미: 해당 게임 스크립트가 로드되지 않았어도 카드는 보이고, 원인을 알려준다
+function openGameSafe(globalName, label) {
+    const g = window[globalName];
+    if (g && typeof g.open === 'function') { g.open(); return; }
+    alert(label + ' 게임 파일을 불러오지 못했어요.\n페이지를 새로고침(캐시 삭제)해도 계속되면 관리자에게 알려주세요.');
+}
 
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
+function loadPage(page, btn) {
+    // 게임 페이지를 벗어나거나 다시 로드할 때 끝말잇기 세션 종료(타이머/봇 응답 포함)
+    stopWordGame();
+
+    const _navs = Array.from(document.querySelectorAll('.nav-btn'));
+    _navs.forEach(b => b.classList.remove('active'));
+    if (!btn) btn = _navs.find(b => (b.getAttribute('onclick') || '').indexOf("'" + page + "'") !== -1); // 버튼 없이 호출돼도 메뉴 강조 유지
+    if (btn) btn.classList.add('active');
     updateTopMoney();
 
     const content = document.getElementById('content');
     if (page === 'profile') {
-        const bannerStyle = userData.bannerUrl ? `background-image: url('${userData.bannerUrl}'); background-size: cover; background-position: center;` : '';
-        const avatarHTML = userData.avatarUrl ? `<img src="${userData.avatarUrl}" class="avatar">` : `<div class="avatar"><i class="fa-solid fa-user"></i></div>`;
+        const _banner = safeImgUrl(userData.bannerUrl);
+        const bannerStyle = _banner ? `background-image: url('${_banner}'); background-size: cover; background-position: center;` : '';
+        const _avatar = safeImgUrl(userData.avatarUrl);
+        const avatarHTML = _avatar ? `<img src="${_avatar}" class="avatar">` : `<div class="avatar"><i class="fa-solid fa-user"></i></div>`;
         content.innerHTML = `
             <div class="card profile-card">
                 <div class="banner-container" style="${bannerStyle}">
@@ -914,7 +1001,7 @@ function loadPage(page, btn) {
                     <div class="avatar-wrapper">${avatarHTML}<button class="edit-avatar-btn" onclick="document.getElementById('avatar-input').click()"><i class="fa-solid fa-pen"></i></button></div>
                     <div class="user-info">
                         <div class="user-info-header">
-                            <h2>${userData.name}</h2>
+                            <h2>${escHtml(userData.name)}</h2>
                             <button class="edit-name-btn" onclick="openModal()"><i class="fa-solid fa-pen"></i></button>
                         </div>
                         <div style="display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
@@ -928,7 +1015,7 @@ function loadPage(page, btn) {
                             <span class="about-me-title">자기소개</span>
                             <button class="edit-name-btn" onclick="openAboutModal()"><i class="fa-solid fa-pen"></i></button>
                         </div>
-                        <div class="about-me-content">${userData.aboutMe}</div>
+                        <div class="about-me-content">${escHtml(userData.aboutMe)}</div>
                     </div>
                 </div>
             </div>
@@ -936,7 +1023,7 @@ function loadPage(page, btn) {
                 <h3 style="margin-top:0; font-size:16px;"><i class="fa-solid fa-wallet" style="color:var(--accent-color);"></i> 내 자산 & 스탯</h3>
                 <div class="stats-grid">
                     <div class="stat-item"><div class="stat-title">보유 코인</div><div class="stat-value" style="color:#ffca28;">${userData.coin.toLocaleString()}원</div></div>
-                    <div class="stat-item"><div class="stat-title">랭크 포인트</div><div class="stat-value" style="color:#42a5f5;">${userData.point} P</div></div>
+                    <div class="stat-item"><div class="stat-title">랭크 포인트</div><div class="stat-value" style="color:#42a5f5;">${(userData.gameStats && userData.gameStats.totalGamePoint) || 0} P</div></div>
                 </div>
             </div>
             <div class="card" style="text-align:left;">
@@ -966,7 +1053,8 @@ function loadPage(page, btn) {
         renderDDays();
         loadUserCoinRankAndTier();
     } else if (page === 'quest') {
-        content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-scroll"></i><h2>퀘스트 시스템 업데이트 예정</h2><p>일일 퀘스트, 도전 과제 및 보상 기능이 추가될 예정입니다.</p></div>`;
+        if (window.Quests) window.Quests.renderPage(content);
+        else content.innerHTML = `<div class="card preparing-box"><i class="fa-solid fa-scroll"></i><h2>퀘스트를 불러오지 못했어요</h2><p>페이지를 새로고침해주세요.</p></div>`;
     } else if (page === 'game') {
         content.innerHTML = `
             <div class="card" style="text-align:left;">
@@ -982,11 +1070,35 @@ function loadPage(page, btn) {
                         </div>
                         <button class="game-play-btn">플레이</button>
                     </div>
+                    <div class="game-card" data-omok-card="1" onclick="openGameSafe('Omok', '오목')">
+                        <div class="game-icon">⚫⚪</div>
+                        <div>
+                            <div class="game-title">오목</div>
+                            <div class="game-desc">다른 유저와 실시간 온라인 대전!</div>
+                        </div>
+                        <button class="game-play-btn">플레이</button>
+                    </div>
+                    <div class="game-card" data-ttt-card="1" onclick="openGameSafe('Ttt', '틱택토')">
+                        <div class="game-icon">❌⭕</div>
+                        <div>
+                            <div class="game-title">틱택토</div>
+                            <div class="game-desc">다른 유저와 실시간 온라인 대전!</div>
+                        </div>
+                        <button class="game-play-btn">플레이</button>
+                    </div>
                     <div class="game-card" onclick="FlappyUI.open()">
                         <div class="game-icon-badge" style="--ib1:#38bdf8; --ib2:#0284c7;"><i class="fa-solid fa-dove"></i></div>
                         <div>
                             <div class="game-title">플라피 버드</div>
                             <div class="game-desc">가시 기둥 하나 통과할 때마다 10코인!</div>
+                        </div>
+                        <button class="game-play-btn">플레이</button>
+                    </div>
+                    <div class="game-card" onclick="TetrisUI.open()">
+                        <div class="game-icon-badge" style="--ib1:#a855f7; --ib2:#6d28d9;"><i class="fa-solid fa-cubes"></i></div>
+                        <div>
+                            <div class="game-title">테트리스</div>
+                            <div class="game-desc">솔로 · 온라인 대결 · 랭크!</div>
                         </div>
                         <button class="game-play-btn">플레이</button>
                     </div>
@@ -1055,7 +1167,7 @@ function openDDayModal(id = null) {
     } else {
         document.getElementById('dday-modal-title').textContent = "기념일 추가";
         document.getElementById('dday-title-input').value = "";
-        document.getElementById('dday-date-input').value = new Date().toISOString().split('T')[0];
+        document.getElementById('dday-date-input').value = (() => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); })();
     }
     document.getElementById('dday-modal').style.display = 'flex';
 }
@@ -1077,6 +1189,7 @@ function saveCustomDDay() {
         const item = customDDays.find(d => d.id === editingDDayId);
         if (item) { item.title = title; item.date = date; }
     } else {
+        if (customDDays.length >= 30) { alert('기념일은 최대 30개까지 만들 수 있어요.'); return; } // 서버 규칙(30개)과 맞춤: 넘기면 모든 저장이 거부됨
         const newId = customDDays.length > 0 ? Math.max(...customDDays.map(d => d.id)) + 1 : 1;
         customDDays.push({ id: newId, title, date });
     }
@@ -1096,7 +1209,7 @@ function renderDDays() {
         html += `
             <div class="dday-item">
                 <div class="dday-info">
-                    <span class="dday-title">${d.title}</span>
+                    <span class="dday-title">${escHtml(d.title)}</span>
                 </div>
                 <div class="dday-actions">
                     <span class="dday-tag">${tag}</span>
@@ -1110,33 +1223,13 @@ function renderDDays() {
 }
 
 async function loadUserCoinRankAndTier() {
+    // (1) 이 기기에 있는 정보만으로 그릴 수 있는 부분: 등급 / 칭호 (인터넷이 없어도 바로 표시)
     try {
-        // 코인 랭킹에서 사용자의 순위 찾기
-        const snapshot = await db.collection('users').orderBy('coin', 'desc').limit(50).get();
-        let coinRank = 0;
-        
-        snapshot.forEach((doc, index) => {
-            if (doc.id === currentUser.uid) {
-                coinRank = index + 1;
-            }
-        });
-
-        // 코인 랭킹 순위 표시
-        const coinRankDisplay = document.getElementById('coin-rank-display');
-        if (coinRankDisplay) {
-            if (coinRank > 0) {
-                coinRankDisplay.textContent = `#${coinRank}`;
-            } else {
-                coinRankDisplay.textContent = '순위없음';
-            }
-        }
-
-        // 현재 등급 표시
         if (typeof calculateTier === 'function' && userData.gameStats) {
             const gameStats = userData.gameStats || {};
-            const stats = getGameStats ? getGameStats(gameStats) : { totalGamePoint: 0 };
+            const stats = (typeof getGameStats === 'function') ? getGameStats(gameStats) : { totalGamePoint: 0 };
             const tier = calculateTier(stats.totalGamePoint);
-            
+
             const tierBadge = document.getElementById('tier-badge-display');
             if (tierBadge) {
                 const iconHTML = (typeof getTierIconHTML === 'function') ? getTierIconHTML(tier.key, 14) : tier.emoji;
@@ -1147,19 +1240,34 @@ async function loadUserCoinRankAndTier() {
                 tierBadge.style.gap = '4px';
             }
         }
-
-        // 칭호 표시
         const titleBadge = document.getElementById('equipped-title-badge');
-        if (titleBadge) {
-            const titleHTML = renderEquippedTitleBadge();
-            titleBadge.innerHTML = titleHTML;
+        if (titleBadge) titleBadge.innerHTML = renderEquippedTitleBadge();
+    } catch (error) {
+        console.error('등급/칭호 표시 실패:', error);
+    }
+
+    // (2) 코인 순위: 서버에서 가져와야 하므로 인터넷이 있을 때만
+    const coinRankDisplay = document.getElementById('coin-rank-display');
+    if (!navigator.onLine) {
+        if (coinRankDisplay) coinRankDisplay.textContent = '오프라인';
+        return;
+    }
+    try {
+        // 프로필을 다시 그릴 때마다 유저 50명 문서(이미지 포함)를 내려받지 않도록 60초 캐시
+        if (window._coinRankCache && window._coinRankCache.uid === currentUser.uid && Date.now() - window._coinRankCache.t < 60000) {
+            if (coinRankDisplay) coinRankDisplay.textContent = window._coinRankCache.text;
+            return;
         }
+        const snapshot = await db.collection('users').orderBy('coin', 'desc').limit(50).get();
+        // Firestore forEach 콜백은 index를 주지 않으므로 docs 배열에서 위치를 찾는다
+        const coinIdx = snapshot.docs.findIndex(d => d.id === currentUser.uid);
+        const coinRank = coinIdx >= 0 ? coinIdx + 1 : 0;
+        const _rankText = coinRank > 0 ? `#${coinRank}` : '50위 밖';
+        window._coinRankCache = { uid: currentUser.uid, t: Date.now(), text: _rankText };
+        if (coinRankDisplay) coinRankDisplay.textContent = _rankText;
     } catch (error) {
         console.error('코인 랭킹 로드 실패:', error);
-        const coinRankDisplay = document.getElementById('coin-rank-display');
-        if (coinRankDisplay) {
-            coinRankDisplay.textContent = '로드실패';
-        }
+        if (coinRankDisplay) coinRankDisplay.textContent = navigator.onLine ? '로드실패' : '오프라인';
     }
 }
 
@@ -1237,6 +1345,10 @@ function openLegalNoticeModal() {
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
 function saveName() {
     const input = document.getElementById('name-input').value.trim();
+    if (input.length > 30 || /[<>]/.test(input)) {
+        alert('닉네임은 30자 이하로, < > 문자 없이 입력해주세요.');
+        return;
+    }
     if(input) {
         userData.name = input;
         closeModal();
@@ -1251,14 +1363,14 @@ function openAboutModal() {
 }
 function closeAboutModal() { document.getElementById('about-modal').style.display = 'none'; }
 function saveAbout() {
-    const input = document.getElementById('about-input').value.trim();
+    const input = document.getElementById('about-input').value.trim().slice(0, 500);
     userData.aboutMe = input || "자기소개를 적어보세요!";
     closeAboutModal();
     loadPage('profile');
     if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
 }
 // ===== 끝말잇기 게임 로직 =====
-const SAM_API_KEY = "uY3XW7tS-CtKY-KcQz-VDFG-0BHo4UJD";
+const SAM_API_KEY = "";   // 보안상 코드에 키를 넣지 않음 (사전 API는 현재 꺼져 있음. 쓰려면 서버에서 호출해야 안전)
 let wordHistory = [];
 let currentWord = "";
 let isGameActive = false;
@@ -1418,6 +1530,8 @@ function candidateStarts(char) {
 
 function startWordChainGame() {
     loadWordList();
+    wordSession++;
+    wordBusy = false;
     isGameActive = true;
     wordHistory = [];
     botTurnCount = 0;
@@ -1456,10 +1570,11 @@ function startWordChainGame() {
 }
 
 // 타이머 시작 함수
-function startWordTimer() {
+function startWordTimer(resume) {
     stopWordTimer(); // 기존 타이머 클리어
-    timeLeft = 30;
+    if (!resume || !(timeLeft > 0)) timeLeft = 30; // 잘못된 입력 후엔 남은 시간부터 이어감 (무한 시간 연장 방지)
     const timerBar = document.getElementById('word-timer-bar');
+    const timerStartedAt = Date.now() - (30 - timeLeft) * 1000;
     
     wordTimer = setInterval(() => {
         if (!isGameActive) {
@@ -1467,7 +1582,7 @@ function startWordTimer() {
             return;
         }
 
-        timeLeft -= 0.1;
+        timeLeft = 30 - (Date.now() - timerStartedAt) / 1000; // 탭이 백그라운드여도 정확
         if (timerBar) {
             const percent = (timeLeft / 30) * 100;
             timerBar.style.width = `${percent}%`;
@@ -1485,6 +1600,16 @@ function startWordTimer() {
     }, 100);
 }
 
+// 끝말잇기 세션: 나가기/재시작 시 진행 중이던 봇 응답이 뒤늦게 반영되지 않도록 번호표를 둔다
+let wordSession = 0;
+let wordBusy = false;
+function stopWordGame() {
+    isGameActive = false;
+    wordSession++;
+    wordBusy = false;
+    stopWordTimer();
+}
+
 // 타이머 중지 함수
 function stopWordTimer() {
     if (wordTimer) {
@@ -1497,6 +1622,8 @@ function stopWordTimer() {
 function handleTimeOut() {
     if (!isGameActive) return;
     isGameActive = false;
+    // 한 번도 두지 않고 방치만 한 판은 퀘스트로 인정하지 않음
+    if (botTurnCount > 0) { if (window.Quests) window.Quests.track('play'); if (window.Quests) window.Quests.track('wordchainPlay'); }
     addBubble("⏰ <b>시간 초과!</b> 30초 안에 단어를 입력하지 못했습니다.<br><b>승부 결과: 시간 초과로 패배하셨습니다! 😢</b>", "system");
     const inputEl = document.getElementById('word-input');
     if (inputEl) inputEl.disabled = true;
@@ -1540,7 +1667,7 @@ function loadWordList() {
             wordSet = set; wordsByStart = byStart; startCount = count;
             console.log(`[끝말잇기] 단어 ${set.size}개 로드 완료`);
         })
-        .catch(e => console.warn('[끝말잇기] words.txt 로드 실패 → API 방식 사용', e));
+        .catch(e => { wordListPromise = null; console.warn('[끝말잇기] words.txt 로드 실패 (다음에 다시 시도)', e); });
     return wordListPromise;
 }
 
@@ -1580,6 +1707,17 @@ async function checkWordExists(word) {
 }
 
 async function submitWord() {
+    if (!isGameActive || wordBusy) return; // 봇이 생각하는 중/검사 중에는 중복 제출 금지
+    wordBusy = true;
+    const mySession = wordSession;
+    try {
+        await submitWordInner(mySession);
+    } finally {
+        if (mySession === wordSession) wordBusy = false;
+    }
+}
+
+async function submitWordInner(mySession) {
     if (!isGameActive) return;
 
     const inputEl = document.getElementById('word-input');
@@ -1596,32 +1734,40 @@ async function submitWord() {
 
     if (userWord.length < 2) {
         addBubble("⚠️ 두 글자 이상의 단어만 입력 가능합니다!", "system");
-        startWordTimer(); // 타이머 재개
+        startWordTimer(true); // 타이머 재개(남은 시간 유지)
         return;
     }
 
     const allowedStarts = candidateStarts(lastChar);
     if (!allowedStarts.includes(firstChar)) {
         addBubble(`⚠️ <b>'${allowedStarts.join("' / '")}'</b>(으)로 시작하는 단어여야 합니다!`, "system");
-        startWordTimer(); // 타이머 재개
+        startWordTimer(true); // 타이머 재개(남은 시간 유지)
         return;
     }
 
     if (wordHistory.includes(userWord)) {
-        addBubble(`⚠️ <b>"${userWord}"</b>은(는) 이미 사용된 단어입니다!`, "system");
-        startWordTimer(); // 타이머 재개
+        addBubble(`⚠️ <b>"${escHtml(userWord)}"</b>은(는) 이미 사용된 단어입니다!`, "system");
+        startWordTimer(true); // 타이머 재개(남은 시간 유지)
+        return;
+    }
+
+    // 한방단어(받을 단어가 거의 없는 끝글자)는 유저도 사용 금지 - 이걸로 봇을 즉시 이기는 편법 차단
+    if (isFatalWord(userWord)) {
+        addBubble(`⚠️ <b>\"${escHtml(userWord)}\"</b>은(는) 한방단어라 사용할 수 없어요! 다른 단어를 입력해주세요.`, "system");
+        startWordTimer(true);
         return;
     }
 
     // 사전 검사 (API 접근이 안 될 때는 억울하게 막지 않도록 통과)
     const exists = await checkWordExists(userWord);
+    if (mySession !== wordSession || !isGameActive) return; // 검사 중 페이지를 나갔다면 중단
     if (exists === false) {
-        addBubble(`⚠️ <b>"${userWord}"</b>은(는) 사전에 없는 단어예요! 다른 단어를 입력해주세요.`, "system");
-        startWordTimer();
+        addBubble(`⚠️ <b>"${escHtml(userWord)}"</b>은(는) 사전에 없는 단어예요! 다른 단어를 입력해주세요.`, "system");
+        startWordTimer(true);
         return;
     }
 
-    addBubble(userWord, "user");
+    addBubble(escHtml(userWord), "user");
     wordHistory.push(userWord);
     currentWord = userWord;
 
@@ -1642,6 +1788,7 @@ async function submitWord() {
         findBotWord(nextChar, altNextChar),
         new Promise(r => setTimeout(r, thinkMs))
     ]);
+    if (mySession !== wordSession || !isGameActive) return; // 봇이 고민하는 동안 나갔다면 결과 무시
 
     if (loadingBubble && loadingBubble.parentNode) {
         loadingBubble.parentNode.removeChild(loadingBubble);
@@ -1653,6 +1800,7 @@ async function submitWord() {
         addBubble(`<b>"${result.word}"</b>! 후후, 슬슬 승부를 볼 시간이네요 😏`, "bot");
         addBubble(`🏁 <b>한방단어</b>로 마무리! 이 글자로 이어갈 단어를 찾기 정말 어려우실 거예요.<br><b>승부 결과: 봇 승리!</b>`, "system");
         isGameActive = false;
+        if (window.Quests) window.Quests.track('play'); if (window.Quests) window.Quests.track('wordchainPlay');
         const inputEl2 = document.getElementById('word-input');
         if (inputEl2) inputEl2.disabled = true;
     } else if (result) {
@@ -1665,6 +1813,7 @@ async function submitWord() {
         userData.coin += 500;
         updateTopMoney();
         isGameActive = false;
+        if (window.Quests) window.Quests.track('play'); if (window.Quests) window.Quests.track('win'); if (window.Quests) window.Quests.track('wordchainPlay');
         if (typeof saveUserDataToFirestore === 'function') saveUserDataToFirestore();
     }
 }
