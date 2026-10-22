@@ -5,10 +5,69 @@
 
 let roomNotifierUnsub = null;
 let roomNotifierStartedAt = null;
+let roomNotifyLastAt = 0;          // 마지막으로 배너를 띄운 시각 (전체 쿨다운)
+const roomNotifyHostLastAt = {};   // 방장별 마지막 알림 시각 (방 만들었다 지우기 반복 스팸 방지)
+
+// ===== 오래된 방 정리 =====
+// 방장이 비정상 종료하면 대기방/진행방 문서가 남아 목록(limit 30)을 막고 읽기 비용을 키운다.
+// Firestore 규칙이 "오래된 방"에 한해 누구나 삭제할 수 있게 허용하므로, 접속한 유저가 가끔 청소한다.
+let _lastRoomCleanupAt = 0;
+let _roomCleanupRunning = false;
+// [상태값, 기준 시각 필드, 지난 뒤 삭제할 시간(ms)] — 규칙(firestore.rules)의 staleDeletable 과 같은 기준 (+5초 여유)
+const _STALE_ROOM_RULES = [
+    // 오목 / 틱택토
+    { status: 'waiting',    games: ['omok', 'ttt'], field: 'createdAt',  ageMs: 31 * 60 * 1000 },
+    { status: 'playing',    games: ['omok', 'ttt'], field: 'lastMoveAt', ageMs: 24 * 60 * 60 * 1000 },
+    { status: 'finished',   games: ['omok', 'ttt'], field: 'lastMoveAt', ageMs: 24 * 60 * 60 * 1000 },
+    // 플라피 버드
+    { status: 'fbWaiting',  games: ['flappy'],      field: 'createdAt',  ageMs: 12 * 60 * 1000 },
+    { status: 'fbPlaying',  games: ['flappy'],      field: 'createdAt',  ageMs: 2 * 60 * 60 * 1000 },
+    { status: 'fbDone',     games: ['flappy'],      field: 'createdAt',  ageMs: 2 * 60 * 60 * 1000 },
+    // 테트리스
+    { status: 'ttrWaiting', games: ['tetris'],      field: 'createdAt',  ageMs: 12 * 60 * 1000 },
+    { status: 'ttrPlaying', games: ['tetris'],      field: 'createdAt',  ageMs: 2 * 60 * 60 * 1000 },
+    { status: 'ttrDone',    games: ['tetris'],      field: 'createdAt',  ageMs: 2 * 60 * 60 * 1000 }
+];
+
+async function cleanupStaleRooms() {
+    const now = Date.now();
+    if (_roomCleanupRunning || now - _lastRoomCleanupAt < 60 * 1000) return; // 1분에 한 번만
+    _lastRoomCleanupAt = now;
+    _roomCleanupRunning = true;
+    try {
+        const col = db.collection('omokRooms');
+        const PAGE = 50;
+        // 오래된 방이 많이 쌓였을 때를 위해 최대 5번 반복 (한 번에 50개씩 → 최대 약 450개 정리)
+        for (let pass = 0; pass < 5; pass++) {
+            const snaps = await Promise.all(_STALE_ROOM_RULES.map(r => col.where('status', '==', r.status).limit(PAGE).get()));
+            const toDelete = [];
+            let full = false;
+            snaps.forEach((snap, i) => {
+                const r = _STALE_ROOM_RULES[i];
+                if (snap.size >= PAGE) full = true;
+                snap.forEach((doc) => {
+                    const d = doc.data();
+                    if (!r.games.includes(d.game || 'omok')) return;
+                    const t = d[r.field] ? d[r.field].toMillis() : null;
+                    if (t && now - t > r.ageMs + 5000) toDelete.push(doc.ref);
+                });
+            });
+            // 하나씩 삭제: 일부가 규칙에서 거절돼도 나머지는 정리되도록 (배치는 하나만 실패해도 전부 취소됨)
+            if (toDelete.length) await Promise.allSettled(toDelete.map(ref => ref.delete()));
+            if (!full || !toDelete.length) break;
+        }
+    } catch (e) {
+        console.warn('오래된 방 정리 실패:', e);
+    } finally {
+        _roomCleanupRunning = false;
+    }
+}
 
 function startRoomNotifier() {
     if (roomNotifierUnsub || !currentUser) return; // 중복 실행 방지
+    if (typeof isOnline === 'function' && !isOnline()) return; // 오프라인이면 시작하지 않음 (온라인이 되면 onBackOnline 이 다시 시작)
     roomNotifierStartedAt = firebase.firestore.Timestamp.now();
+    cleanupStaleRooms(); // 접속할 때 한 번 청소
 
     roomNotifierUnsub = db.collection('omokRooms')
         .where('status', '==', 'waiting')
@@ -24,6 +83,16 @@ function startRoomNotifier() {
 
                 // 내가 만든 방은 알림 안 띄움
                 if (d.hostUid === currentUser.uid) return;
+
+                // 오목/틱택토 방만 (다른 게임 방이 오목 방으로 잘못 표시되지 않게)
+                if (d.game && d.game !== 'omok' && d.game !== 'ttt') return;
+
+                // 스팸 방지: 전체 5초 쿨다운 + 같은 방장은 60초에 한 번만
+                const nowMs = Date.now();
+                if (nowMs - roomNotifyLastAt < 5000) return;
+                if (nowMs - (roomNotifyHostLastAt[d.hostUid] || 0) < 60000) return;
+                roomNotifyLastAt = nowMs;
+                roomNotifyHostLastAt[d.hostUid] = nowMs;
 
                 showRoomNotification({
                     roomId: change.doc.id,
@@ -111,9 +180,7 @@ function goToRoomFromBanner(roomId, game) {
 }
 
 function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    return escHtml(str); // escape.js 의 공용 함수 사용 (따옴표까지 이스케이프)
 }
 
 // 배너 슬라이드인 애니메이션 스타일 주입
