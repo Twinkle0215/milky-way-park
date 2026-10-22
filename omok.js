@@ -118,6 +118,7 @@
 
         loadResumeBox();
 
+        if (typeof cleanupStaleRooms === 'function') cleanupStaleRooms(); // 오래된 방 정리 (목록 30개 제한이 막히지 않게)
         lobbyUnsub = db.collection(COLLECTION)
             .where('status', '==', 'waiting')
             .limit(30)
@@ -532,6 +533,7 @@
                 if (room && room.isRanking && typeof recordGameResult === 'function') {
                     recordGameResult('omok', true);
                 }
+                if (window.Quests) window.Quests.track('play'); if (window.Quests) window.Quests.track('win');
             }
         } catch (e) {
             rewardInFlight = false;
@@ -566,6 +568,7 @@
                 if (room && room.isRanking && typeof recordGameResult === 'function') {
                     recordGameResult('omok', false);
                 }
+                if (window.Quests) window.Quests.track('play');
             }
         } catch (e) {
             rewardInFlight = false;
@@ -838,7 +841,7 @@
     };
 
     window.Omok = {
-        open: openLobby,
+        open: function () { if (requireOnline('오목 온라인 대전')) openLobby.apply(this, arguments); },
         create: createRoom,
         selectMode: selectMode,
         join: joinRoom,
