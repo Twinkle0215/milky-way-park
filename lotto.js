@@ -1,7 +1,7 @@
 // ===== lotto.js =====
 // 은하수 로또: 상점에서 1,000원에 번호(1~45 중 6개, 수동/자동) 구매
-// 매주 토요일 기준으로 자동 추첨 (서버 없이, 접속한 유저 중 첫 명의 브라우저가
-// Firestore 트랜잭션으로 1회만 추첨 확정 → 중복 추첨 절대 불가, 완전 무료)
+// 매주 토요일(KST) 기준으로 자동 추첨 (서버 없이, 접속한 유저 중 첫 명의 브라우저가
+// Firestore 트랜잭션으로 1회만 추첨 확정 → 중복 추첨 불가)
 
 (function () {
     const TICKET_PRICE = 1000;
@@ -12,35 +12,34 @@
     let autoQty = 1;            // 자동 구매 수량
     let lottoTab = 'buy';       // 'buy' | 'my'
 
-    // ===== 날짜 유틸 =====
+    // 기기 시계 대신 서버 시간 사용 (시계를 바꿔 미리 추첨/당첨번호를 알아내는 꼼수 방지)
+    function nowDate() { return new Date(typeof getServerNow === 'function' ? getServerNow() : Date.now()); }
+    let buying = false; // 구매 중복 클릭 방지
+
+    // ===== 날짜 유틸 (모두 한국 시간(KST) 기준 - Firestore 규칙의 날짜 검사와 같은 기준) =====
+    const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+    // 반환된 Date를 getUTC*()로 읽으면 한국 시간 값이 된다
+    function kstView(date) { return new Date(new Date(date).getTime() + KST_OFFSET_MS); }
+    function idFromUtcDate(u) {
+        const y = u.getUTCFullYear();
+        const m = String(u.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(u.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
     // 이번에 구매하면 배정될 "다가오는 토요일" id (YYYY-MM-DD)
     function getUpcomingRoundId(date) {
-        const d = new Date(date);
-        const day = d.getDay(); // 0=일 ... 6=토
-        let daysUntilSat = (6 - day + 7) % 7;
+        const t = kstView(date);
+        let daysUntilSat = (6 - t.getUTCDay() + 7) % 7; // 0=일 ... 6=토
         if (daysUntilSat === 0) daysUntilSat = 7; // 오늘이 토요일이면 이미 추첨 지난 걸로 보고 다음주로
-        const result = new Date(d);
-        result.setHours(0, 0, 0, 0);
-        result.setDate(result.getDate() + daysUntilSat);
-        return formatDateId(result);
+        return idFromUtcDate(new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() + daysUntilSat)));
     }
 
-    // 지금 기준 "가장 최근에 지나간(또는 오늘인) 토요일" id → 이 회차는 추첨 대상
+    // 지금 기준 "가장 최근에 지나간(또는 오늘인) 토요일" id → 이 회차까지는 추첨 대상
     function getDueRoundId(date) {
-        const d = new Date(date);
-        const day = d.getDay();
-        const daysSinceSat = (day - 6 + 7) % 7;
-        const result = new Date(d);
-        result.setHours(0, 0, 0, 0);
-        result.setDate(result.getDate() - daysSinceSat);
-        return formatDateId(result);
-    }
-
-    function formatDateId(d) {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
+        const t = kstView(date);
+        const daysSinceSat = (t.getUTCDay() - 6 + 7) % 7;
+        return idFromUtcDate(new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() - daysSinceSat)));
     }
 
     function formatDateLabel(id) {
@@ -71,41 +70,77 @@
         return { numbers: numbers.sort((a, b) => a - b), bonus };
     }
 
-    // ===== 매주 토요일 자동추첨 (첫 접속자가 트랜잭션으로 1회만 실행) =====
+    // ===== 추첨 (트랜잭션으로 회차당 1회만 확정) =====
+    // 이미 추첨된 회차면 그대로 읽어서 반환, 아직이면 이 브라우저가 추첨해서 확정
+    async function drawRoundIfMissing(roundId) {
+        const ref = db.collection('lottoRounds').doc(roundId);
+        await db.runTransaction(async (tx) => {
+            const snap = await tx.get(ref);
+            if (snap.exists) return; // 이미 누가 추첨 완료함
+            const { numbers, bonus } = generateDrawResult();
+            tx.set(ref, {
+                round: roundId,
+                winningNumbers: numbers,
+                bonusNumber: bonus,
+                drawnAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        });
+        const done = await ref.get();
+        return done.exists ? done.data() : null;
+    }
+
     async function ensureLottoDrawn() {
         try {
-            const roundId = getDueRoundId(new Date());
-            const ref = db.collection('lottoRounds').doc(roundId);
-            await db.runTransaction(async (tx) => {
-                const snap = await tx.get(ref);
-                if (snap.exists) return; // 이미 누가 추첨 완료함
-                const { numbers, bonus } = generateDrawResult();
-                tx.set(ref, {
-                    round: roundId,
-                    winningNumbers: numbers,
-                    bonusNumber: bonus,
-                    drawnAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            });
+            await drawRoundIfMissing(getDueRoundId(nowDate()));
         } catch (e) {
             console.warn('로또 추첨 확인 실패:', e);
         }
     }
 
     // ===== 티켓 구매 =====
+    const MAX_BUY_PER_ACTION = 100; // 한 번에 살 수 있는 최대 장수 (Firestore 쓰기 폭주 방지)
+
     async function buyTickets(ticketNumbersList) {
+        if (buying) return false;
+        buying = true;
+        try { return await buyTicketsInner(ticketNumbersList); }
+        finally { buying = false; }
+    }
+
+    async function buyTicketsInner(ticketNumbersList) {
         // ticketNumbersList: 번호 6개짜리 배열들의 배열 (여러 장 한번에 가능)
+        if (typeof waitServerTime === 'function') await waitServerTime();
+        if (typeof serverTimeOk !== 'undefined' && !serverTimeOk) {
+            alert('서버 시간을 확인하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요.');
+            return false;
+        }
+        if (ticketNumbersList.length > MAX_BUY_PER_ACTION) {
+            alert(`한 번에 최대 ${MAX_BUY_PER_ACTION}장까지 구매할 수 있어요.`);
+            return false;
+        }
         const total = TICKET_PRICE * ticketNumbersList.length;
         if (userData.coin < total) {
             alert(`코인이 부족해요! (필요: ${total.toLocaleString()}원, 보유: ${userData.coin.toLocaleString()}원)`);
             return false;
         }
-        const roundId = getUpcomingRoundId(new Date());
+        // 아직 서버에 안 보낸 코인 증감분을 먼저 반영 (서버 기준 잔액 검사와 맞추기 위함)
+        await saveUserDataToFirestore();
+
+        const roundId = getUpcomingRoundId(nowDate());
+        // 이미 추첨된 회차에는 구매 불가 (당첨번호를 알고 사는 것 방지)
+        try {
+            const drawn = await db.collection('lottoRounds').doc(roundId).get();
+            if (drawn.exists) { alert('이미 추첨이 끝난 회차예요. 잠시 후 다시 시도해주세요.'); return false; }
+        } catch (e) { alert('회차 확인에 실패했어요. 다시 시도해주세요.'); return false; }
+        const userRef = db.collection('users').doc(currentUser.uid);
+        let bought = 0;
         try {
             const CHUNK = 400;   // Firestore 배치 한도(500) 안에서 나눠 저장
             for (let i = 0; i < ticketNumbersList.length; i += CHUNK) {
+                const chunk = ticketNumbersList.slice(i, i + CHUNK);
+                const cost = chunk.length * TICKET_PRICE;
                 const batch = db.batch();
-                ticketNumbersList.slice(i, i + CHUNK).forEach((nums) => {
+                chunk.forEach((nums) => {
                     const ref = db.collection('lottoTickets').doc();
                     batch.set(ref, {
                         uid: currentUser.uid,
@@ -116,16 +151,24 @@
                         checked: false
                     });
                 });
+                // 티켓 생성 + 코인 차감을 한 배치로 → 둘 다 되거나 둘 다 안 됨 (공짜 티켓/코인만 빠짐 방지)
+                batch.update(userRef, { coin: firebase.firestore.FieldValue.increment(-cost) });
                 await batch.commit();
+                applyServerCoinDelta(-cost); // 서버가 이미 차감했으므로 로컬/동기화 기준도 함께 이동
+                bought += chunk.length;
             }
-
-            userData.coin -= total;
             updateTopMoney();
-            await saveUserDataToFirestore();
+            try { if (window.Quests) window.Quests.track('lottoBuy', bought); } catch (e) { }
             return true;
         } catch (e) {
             console.error('로또 구매 실패:', e);
-            alert('구매 중 오류가 발생했어요. 다시 시도해주세요.');
+            updateTopMoney();
+            if (bought > 0) {
+                try { if (window.Quests) window.Quests.track('lottoBuy', bought); } catch (e2) { }
+                alert(`${bought}장만 구매됐고 나머지는 실패했어요. (코인이 차감된 만큼만 구매돼요)`);
+            } else {
+                alert('구매 중 오류가 발생했어요. 코인이 부족하거나 네트워크 문제일 수 있어요. 다시 시도해주세요.');
+            }
             return false;
         }
     }
@@ -151,35 +194,61 @@
                 .where('checked', '==', false)
                 .get();
 
+            // 회차 문서는 회차당 1번만 읽는다. 이미 지난 회차인데 추첨이 안 돼 있으면(접속자가 없던 주) 지금 추첨한다.
+            const dueId = getDueRoundId(nowDate());
+            const roundCache = new Map();
+            const roundIds = [...new Set(snap.docs.map(d => d.data().round))];
+            for (const rid of roundIds) {
+                let r = null;
+                try {
+                    const rs = await db.collection('lottoRounds').doc(rid).get();
+                    if (rid > dueId) r = null; // 아직 추첨일이 안 된 회차는 절대 채점하지 않음
+                    else if (rs.exists) r = rs.data();
+                    else r = await drawRoundIfMissing(rid);
+                } catch (e) { console.warn('회차 확인 실패:', rid, e); }
+                roundCache.set(rid, r);
+            }
+
             let totalPrize = 0;
             let checkedCount = 0, pendingCount = 0;
             const results = [];
+            const gradable = []; // { ref, tier, prize }
 
             for (const doc of snap.docs) {
                 const ticket = doc.data();
-                const roundSnap = await db.collection('lottoRounds').doc(ticket.round).get();
-                if (!roundSnap.exists) { pendingCount++; continue; } // 아직 추첨 안 된 회차 → 넘어감(나중에 다시 확인)
-
-                const round = roundSnap.data();
+                const round = roundCache.get(ticket.round);
+                if (!round) { pendingCount++; continue; } // 아직 추첨 안 된 회차 → 나중에 다시 확인
                 const tier = getMatchTier(ticket.numbers, round.winningNumbers, round.bonusNumber);
                 const prize = tier ? PRIZE_TABLE[tier] : 0;
-
-                await doc.ref.update({ checked: true, tier: tier, prize: prize });
-                checkedCount++;
-                totalPrize += prize;
-                if (tier) results.push({ round: ticket.round, tier, prize });
+                gradable.push({ ref: doc.ref, round: ticket.round, tier, prize });
             }
 
-            if (totalPrize > 0) {
-                userData.coin += totalPrize;
+            // "확인 처리"와 "당첨금 지급"을 한 배치로 묶어서 원자적으로 처리
+            // (중간에 끊겨도 당첨금이 사라지거나 이중 지급되지 않음)
+            const userRef = db.collection('users').doc(currentUser.uid);
+            const CHUNK = 400;
+            try {
+                for (let i = 0; i < gradable.length; i += CHUNK) {
+                    const chunk = gradable.slice(i, i + CHUNK);
+                    const chunkPrize = chunk.reduce((a, g) => a + g.prize, 0);
+                    const batch = db.batch();
+                    chunk.forEach(g => batch.update(g.ref, { checked: true, tier: g.tier, prize: g.prize }));
+                    if (chunkPrize > 0) batch.update(userRef, { coin: firebase.firestore.FieldValue.increment(chunkPrize) });
+                    await batch.commit();
+                    if (chunkPrize > 0) applyServerCoinDelta(chunkPrize);
+                    chunk.forEach(g => { if (g.tier) results.push({ round: g.round, tier: g.tier, prize: g.prize }); });
+                    totalPrize += chunkPrize;
+                    checkedCount += chunk.length;
+                }
+            } finally {
                 updateTopMoney();
-                await saveUserDataToFirestore();
             }
 
             renderLottoResultSummary(results, totalPrize, checkedCount, pendingCount);
+            if (checkedCount > 0 && window.Quests) window.Quests.track('lottoCheck');
         } catch (e) {
             console.error('당첨 확인 실패:', e);
-            alert('당첨 확인 중 오류가 발생했어요.');
+            alert('당첨 확인 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = '🎉 당첨 확인하기'; }
             historyLoaded = false;   // 기록 탭은 다음에 열 때 새로 불러옴
@@ -216,7 +285,7 @@
     }
 
     function setAutoQty(delta) {
-        autoQty = Math.max(1, Math.floor(autoQty + delta));
+        autoQty = Math.min(MAX_BUY_PER_ACTION, Math.max(1, Math.floor(autoQty + delta)));
         renderShopLotto();
     }
 
@@ -235,12 +304,12 @@
 
     function setAutoQtyDirect(value) {
         const n = Math.floor(Number(value));
-        autoQty = Number.isFinite(n) && n >= 1 ? n : 1;
+        autoQty = Number.isFinite(n) && n >= 1 ? Math.min(n, MAX_BUY_PER_ACTION) : 1;
         renderShopLotto();
     }
 
     async function submitAutoBuy() {
-        const qty = Math.max(1, Math.floor(autoQty));
+        const qty = Math.min(MAX_BUY_PER_ACTION, Math.max(1, Math.floor(autoQty)));
         const total = TICKET_PRICE * qty;
         if (!Number.isSafeInteger(total) || userData.coin < total) {
             alert(`코인이 부족해요! (필요: ${total.toLocaleString()}원, 보유: ${userData.coin.toLocaleString()}원)`);
@@ -313,7 +382,7 @@
             listBox.innerHTML = `<p style="font-size:12px; color:var(--sub-text); text-align:center; padding:16px 0; line-height:1.6;">당첨 확인을 기다리는 로또가 없어요.<br>확인을 마친 로또는 '기록' 탭에서 볼 수 있어요.</p>`;
             return;
         }
-        const dueId = getDueRoundId(new Date());
+        const dueId = getDueRoundId(nowDate());
         const drawnCount = myTicketsCache.filter(t => t.round <= dueId).length;
         const head = `<p style="font-size:12px; color:var(--sub-text); margin:0 0 4px;">추첨 완료 ${drawnCount}장 · 추첨 대기 ${myTicketsCache.length - drawnCount}장</p>`;
         listBox.innerHTML = head + myTicketsCache.map(t => {
@@ -462,7 +531,7 @@
         const body = document.getElementById('lotto-modal-body');
         if (!body) return;
 
-        const upcoming = formatDateLabel(getUpcomingRoundId(new Date()));
+        const upcoming = formatDateLabel(getUpcomingRoundId(nowDate()));
         const sub = document.getElementById('lotto-modal-sub');
         if (sub) sub.textContent = `1장 ${TICKET_PRICE.toLocaleString()}원 · 다음 추첨: ${upcoming}`;
 
@@ -495,7 +564,7 @@
                         style="width:80px; text-align:center; font-size:14px; font-weight:bold; padding:4px; border-radius:8px; border:1px solid var(--border-color, rgba(255,255,255,0.15)); background:var(--card-bg,#2a2a2e); color:var(--main-text,#fff);">
                     <button class="lotto-qty-btn" onclick="LottoUI.setAutoQty(1)">+</button>
                 </div>
-                <div style="font-size:11px; color:var(--sub-text); margin-top:6px;">수량 제한 없음 · 보유 코인으로 최대 ${Math.floor(userData.coin / TICKET_PRICE).toLocaleString()}장까지 구매 가능</div>
+                <div style="font-size:11px; color:var(--sub-text); margin-top:6px;">1회 최대 ${MAX_BUY_PER_ACTION}장 · 보유 코인으로 최대 ${Math.min(MAX_BUY_PER_ACTION, Math.floor(userData.coin / TICKET_PRICE)).toLocaleString()}장까지 구매 가능</div>
                 <button class="modal-btn btn-confirm" style="width:100%; margin-top:8px;" onclick="LottoUI.submitAutoBuy()">
                     자동 ${autoQty}장 구매 (${(TICKET_PRICE * autoQty).toLocaleString()}원)
                 </button>
@@ -527,7 +596,7 @@
     }
 
     window.LottoUI = {
-        open: openModal, close: closeModal,
+        open: function () { if (requireOnline('로또')) openModal(); }, close: closeModal,
         toggleNumber, setAutoQty, submitManualBuy, submitAutoBuy,
         switchTab, checkMyTickets, setHistoryFilter, showMoreHistory, setAutoQtyDirect
     };
