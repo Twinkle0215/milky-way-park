@@ -170,6 +170,10 @@ async function renderRankingPage() {
                     style="flex:1; padding:12px; border:none; background:none; color:var(--sub-text); border-bottom:2px solid transparent; cursor:pointer; font-weight:bold;">
                     💰 코인 랭킹
                 </button>
+                <button id="rank-tab-waste" class="rank-tab-btn" onclick="switchRankingTab('waste')"
+                    style="flex:1; padding:12px; border:none; background:none; color:var(--sub-text); border-bottom:2px solid transparent; cursor:pointer; font-weight:bold;">
+                    🗑️ 낭비 랭킹
+                </button>
             </div>
 
             <!-- 랭킹 내용 -->
@@ -205,6 +209,9 @@ async function switchRankingTab(type) {
     document.getElementById('rank-tab-coin').style.borderBottomColor = type === 'coin' ? 'var(--accent-color)' : 'transparent';
     document.getElementById('rank-tab-coin').style.color = type === 'coin' ? 'var(--text-color)' : 'var(--sub-text)';
 
+    document.getElementById('rank-tab-waste').style.borderBottomColor = type === 'waste' ? 'var(--accent-color)' : 'transparent';
+    document.getElementById('rank-tab-waste').style.color = type === 'waste' ? 'var(--text-color)' : 'var(--sub-text)';
+
     // 로딩 상태 표시
     const content = document.getElementById('ranking-content');
     content.innerHTML = '<div style="text-align:center; padding:20px; color:var(--sub-text);"><i class="fa-solid fa-spinner fa-spin"></i> 로딩 중...</div>';
@@ -225,7 +232,7 @@ function renderRankingList(rankings, type) {
     const content = document.getElementById('ranking-content');
     
     if (!rankings || rankings.length === 0) {
-        content.innerHTML = '<div style="text-align:center; padding:20px; color:var(--sub-text);">랭킹 데이터가 없습니다.</div>';
+        content.innerHTML = '<div style="text-align:center; padding:20px; color:var(--sub-text);">' + (type === 'waste' ? '아직 낭비한 사람이 없어요. 첫 낭비왕이 되어보세요! 🗑️' : '랭킹 데이터가 없습니다.') + '</div>';
         return;
     }
 
@@ -256,6 +263,13 @@ function renderRankingList(rankings, type) {
                 <div class="ranking-stat">
                     <div style="font-size:12px; color:var(--sub-text);">승률</div>
                     <div style="font-size:13px;">${user.winRate}%</div>
+                </div>
+            `;
+        } else if (type === 'waste') {
+            statDisplay = `
+                <div class="ranking-stat">
+                    <div style="font-size:12px; color:var(--sub-text);">낭비한 개수</div>
+                    <div style="font-size:14px; font-weight:bold; color:#94a3b8;">🗑️ ${(user.waste || 0).toLocaleString()}개</div>
                 </div>
             `;
         } else {
