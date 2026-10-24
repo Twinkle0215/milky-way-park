@@ -1102,29 +1102,29 @@ function loadPage(page, btn) {
                         </div>
                         <button class="game-play-btn">플레이</button>
                     </div>
-                    <div class="game-card" style="opacity: 0.6; cursor: default;">
+                    <div class="game-card" onclick="openGameSafe('StockUI', '은하수 주식')">
                         <div class="game-icon-badge" style="--ib1:#22c55e; --ib2:#15803d;"><i class="fa-solid fa-chart-line"></i></div>
                         <div>
                             <div class="game-title">은하수 주식</div>
                             <div class="game-desc">코인 투자 시뮬레이션</div>
                         </div>
-                        <button class="game-play-btn" style="background:#555;">준비중</button>
+                        <button class="game-play-btn">플레이</button>
                     </div>
-                    <div class="game-card" style="opacity: 0.6; cursor: default;">
+                    <div class="game-card" onclick="openGameSafe('FishingUI', '낚시왕')">
                         <div class="game-icon-badge" style="--ib1:#14b8a6; --ib2:#0f766e;"><i class="fa-solid fa-fish"></i></div>
                         <div>
                             <div class="game-title">낚시왕</div>
                             <div class="game-desc">물고기 잡아보세요!</div>
                         </div>
-                        <button class="game-play-btn" style="background:#555;">준비중</button>
+                        <button class="game-play-btn">플레이</button>
                     </div>
-                    <div class="game-card" style="opacity: 0.6; cursor: default;">
+                    <div class="game-card" onclick="openGameSafe('EnhanceUI', '무기 강화')">
                         <div class="game-icon-badge" style="--ib1:#f43f5e; --ib2:#be123c;"><i class="fa-solid fa-hammer"></i></div>
                         <div>
                             <div class="game-title">무기 강화</div>
                             <div class="game-desc">극한의 확률 강화!</div>
                         </div>
-                        <button class="game-play-btn" style="background:#555;">준비중</button>
+                        <button class="game-play-btn">플레이</button>
                     </div>
                 </div>
             </div>`;
@@ -1140,6 +1140,14 @@ function loadPage(page, btn) {
                         <div>
                             <div class="game-title">은하수 로또</div>
                             <div class="game-desc">1,000원 · 매주 토요일 추첨</div>
+                        </div>
+                        <button class="game-play-btn">구매하기</button>
+                    </div>
+                    <div class="game-card" onclick="openGameSafe('WasteUI', '낭비하기')">
+                        <div class="game-icon-badge" style="--ib1:#94a3b8; --ib2:#475569;"><i class="fa-solid fa-trash-can"></i></div>
+                        <div>
+                            <div class="game-title">낭비하기</div>
+                            <div class="game-desc">1원 · 개수 선택 · 낭비왕 랭킹!</div>
                         </div>
                         <button class="game-play-btn">구매하기</button>
                     </div>
