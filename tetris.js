@@ -222,6 +222,7 @@
                 c.r = to; c.x = nx; c.y = ny;
                 s.lastRot = true;
                 touchLock(s);
+                try { if (window.GameBGM && GameBGM.sfx) GameBGM.sfx('rotate'); } catch (e) { }   // 방향 바꿀 때 휙!
                 return true;
             }
         }
@@ -318,6 +319,8 @@
         const full = [];
         for (let y = 0; y < TOT; y++) if (s.board[y].every(v => v)) full.push(y);
         const n = full.length;
+        // 줄을 못 지웠으면 '찰칵', 지웠으면 1~4줄에 따라 다른 경쾌한 소리
+        try { if (window.GameBGM && GameBGM.sfx) GameBGM.sfx(n > 0 ? 'clear' : 'lock', n); } catch (e) { }
         if (n) {          // 바로 지우지 않고, 지워질 줄을 기억해두고 연출 후에 삭제
             s.clearAnim = {
                 rowsY: full,
