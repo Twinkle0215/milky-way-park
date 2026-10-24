@@ -144,10 +144,11 @@ async function fetchRankings(type = 'game', limit = 10) {
         let query = db.collection('users');
         if (type === 'coin') query = query.orderBy('coin', 'desc');
         else if (type === 'game') query = query.orderBy('gameStats.totalGamePoint', 'desc');
+        else if (type === 'waste') query = query.orderBy('wasteCount', 'desc');   // 낭비하기 아이템을 가장 많이 산 사람
 
         const snapshot = await query.limit(limit).get();
         // Firestore 의 forEach 는 index 를 넘겨주지 않음(rank 가 NaN 이 되던 버그) → docs 배열 사용
-        const rankings = snapshot.docs.map((doc, index) => {
+        const rankings = snapshot.docs.filter(doc => type !== 'waste' || (doc.data().wasteCount || 0) > 0).map((doc, index) => {
             const data = doc.data();
             const stats = getGameStats(data.gameStats || {});
             const tier = calculateTier(stats.totalGamePoint);
@@ -157,6 +158,7 @@ async function fetchRankings(type = 'game', limit = 10) {
                 name: data.name || '익명의 플레이어',
                 avatarUrl: data.avatarUrl || null,
                 coin: data.coin || 0,
+                waste: data.wasteCount || 0,
                 gamePoint: stats.totalGamePoint || 0,
                 tier: tier.tier,
                 tierEmoji: tier.emoji,
