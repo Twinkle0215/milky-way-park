@@ -6,7 +6,7 @@
 //
 // 평소에는 이 파일을 고칠 필요가 없다. (index.html 에 적힌 파일 목록을 자동으로 읽어서 저장함)
 // 이 파일의 "동작 방식"을 바꿨을 때만 아래 VERSION 숫자를 올리면 된다.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const STATIC_CACHE = 'mwp-static-' + VERSION;
 const RUNTIME_CACHE = 'mwp-runtime-' + VERSION;
 
